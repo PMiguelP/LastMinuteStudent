@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed52cd46504188c4fbf31ad3498e5fa0, type: 3}
+  m_Name: DefaultSpawnTable
+  m_EditorClassIdentifier: Assembly-CSharp::SpawnTable
+  items:
+  - {fileID: 11400000, guid: a9fa247eb28772a4e922a8149ca258ec, type: 2}
+  - {fileID: 11400000, guid: 5e4e6308299a0f7419989144c23deeda, type: 2}
+  - {fileID: 11400000, guid: 6dc76d3b64a029248830e8803e2f77cc, type: 2}
+  - {fileID: 11400000, guid: 0b1d0985b9d76b748bfe228f2e55967c, type: 2}
+  - {fileID: 11400000, guid: c311b84ec57348441a18ed7db1950375, type: 2}
+  - {fileID: 11400000, guid: 5209339fb3869a94b8eec2cb22d411fe, type: 2}
+  - {fileID: 11400000, guid: 7a3244fd882c92a47ad82105740a2045, type: 2}
+  - {fileID: 11400000, guid: f9e55f8984b48f04c87e7bc5a0f1d8b5, type: 2}
+  - {fileID: 11400000, guid: a1c2e3f45617a9ab2c3d4e5f67890abc, type: 2}
+  - {fileID: 11400000, guid: b2d3f405a678abc9d4e5f60789abcde0, type: 2}
+  - {fileID: 11400000, guid: c3e4f50678abcd01e5f607890babcde1, type: 2}
+  - {fileID: 11400000, guid: d4f50678a234ef23f60789012abcdef1, type: 2}
