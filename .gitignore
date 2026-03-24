@@ -49,6 +49,7 @@ ExportedObj/
 *.mdb
 *.opendb
 *.VC.db
+*.Editor
 
 # Unity3D generated meta files
 *.pidb.meta
@@ -75,3 +76,6 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
 # End of https://www.toptal.com/developers/gitignore/api/unity
+
+# Custom ignores
+/Assets/Scripts/Editor/
