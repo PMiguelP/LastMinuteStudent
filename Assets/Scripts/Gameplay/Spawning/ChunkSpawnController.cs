@@ -7,7 +7,7 @@ public class ChunkSpawnController : MonoBehaviour
     [SerializeField] private MainMenuController menuController;
     [SerializeField] private SpawnTable spawnTable;
     [SerializeField] private SpawnSocket[] sockets;
-    [SerializeField] private float spawnChance = 0.8f;
+    [SerializeField] private float spawnChance = 1.0f;
     [SerializeField] private bool guaranteeObstacleSpawn = true;
 
     [Header("Fairness")]
@@ -30,49 +30,49 @@ public class ChunkSpawnController : MonoBehaviour
     private readonly List<(GameObject instance, GameObject prefab)> spawnedInstances =
         new List<(GameObject instance, GameObject prefab)>();
 
-    
+
 
     private readonly struct CoinPoint
     {
         public readonly float relZ;
-        public readonly int   laneOffset; 
-        public readonly float heightY;    
+        public readonly int laneOffset;
+        public readonly float heightY;
         public CoinPoint(float z, int lane, float y = 1f)
         { relZ = z; laneOffset = lane; heightY = y; }
     }
 
     private static readonly CoinPoint[][] CoinPatterns = new CoinPoint[][]
     {
-        
+
         new[] { new CoinPoint(0,0), new CoinPoint(2,0), new CoinPoint(4,0),
                 new CoinPoint(6,0), new CoinPoint(8,0) },
 
-        
+
         new[] { new CoinPoint(0,0),  new CoinPoint(2,0),  new CoinPoint(4,0),
                 new CoinPoint(6,0),  new CoinPoint(8,0),  new CoinPoint(10,0),
                 new CoinPoint(12,0), new CoinPoint(14,0) },
 
-        
+
         new[] { new CoinPoint(0,0,1f),   new CoinPoint(2,0,1.7f), new CoinPoint(4,0,2.4f),
                 new CoinPoint(6,0,2.4f), new CoinPoint(8,0,1.7f), new CoinPoint(10,0,1f) },
 
-        
+
         new[] { new CoinPoint(0,-1),  new CoinPoint(3,0),  new CoinPoint(6,1),
                 new CoinPoint(9,0),   new CoinPoint(12,-1), new CoinPoint(15,0) },
 
-        
+
         new[] { new CoinPoint(0,-1), new CoinPoint(3,-1), new CoinPoint(6,0),
                 new CoinPoint(9,0),  new CoinPoint(12,1), new CoinPoint(15,1) },
 
-        
+
         new[] { new CoinPoint(0,1),  new CoinPoint(3,1),  new CoinPoint(6,0),
                 new CoinPoint(9,0),  new CoinPoint(12,-1), new CoinPoint(15,-1) },
 
-        
+
         new[] { new CoinPoint(0,-1), new CoinPoint(2,-1), new CoinPoint(4,-1),
                 new CoinPoint(0,1),  new CoinPoint(2,1),  new CoinPoint(4,1) },
 
-        
+
         new[] { new CoinPoint(0,-1,1f),  new CoinPoint(2,-1,1.4f),
                 new CoinPoint(4,0,1.8f), new CoinPoint(6,0,2.2f),
                 new CoinPoint(8,1,2.2f), new CoinPoint(10,1,1f) },
@@ -108,7 +108,7 @@ public class ChunkSpawnController : MonoBehaviour
         float t = maxDifficultyScore > 0f ? Mathf.Clamp01(score / maxDifficultyScore) : 1f;
         float effectiveChance = Mathf.Lerp(baseChance, spawnChanceAtMaxDifficulty, t);
 
-        
+
         Dictionary<int, List<SpawnSocket>> rows = new Dictionary<int, List<SpawnSocket>>();
         foreach (SpawnSocket socket in sockets)
         {
@@ -130,7 +130,7 @@ public class ChunkSpawnController : MonoBehaviour
 
         foreach (List<SpawnSocket> rowSockets in rows.Values)
         {
-            
+
             List<(SpawnSocket socket, SpawnItemDefinition definition)> candidates =
                 new List<(SpawnSocket, SpawnItemDefinition)>();
 
@@ -147,13 +147,13 @@ public class ChunkSpawnController : MonoBehaviour
                     continue;
                 }
 
-                
+
                 if (definition.ItemType == RunnerItemType.Coin)
                 {
                     continue;
                 }
 
-                
+
                 if (inGracePeriod && definition.ItemType == RunnerItemType.Obstacle)
                 {
                     continue;
@@ -162,7 +162,7 @@ public class ChunkSpawnController : MonoBehaviour
                 candidates.Add((socket, definition));
             }
 
-            
+
             int obstacleCount = 0;
             foreach ((SpawnSocket s, SpawnItemDefinition d) in candidates)
             {
@@ -187,7 +187,7 @@ public class ChunkSpawnController : MonoBehaviour
                 obstacleCount--;
             }
 
-            
+
             foreach ((SpawnSocket socket, SpawnItemDefinition definition) in candidates)
             {
                 if (definition.ItemType == RunnerItemType.Obstacle)
@@ -199,13 +199,13 @@ public class ChunkSpawnController : MonoBehaviour
             }
         }
 
-        
+
         if (guaranteeObstacleSpawn && !spawnedObstacle && !inGracePeriod)
         {
             TrySpawnGuaranteedObstacle(score);
         }
 
-        
+
         SpawnCoinPatterns(score);
     }
 
@@ -255,16 +255,31 @@ public class ChunkSpawnController : MonoBehaviour
     private void SpawnCoinAt(SpawnItemDefinition def, Vector3 worldPosition)
     {
         Quaternion spawnRotation = Quaternion.Euler(def.RotationOffsetEuler);
-        Vector3 spawnPosition    = worldPosition + def.LocalPositionOffset;
+        Vector3 spawnPosition = worldPosition + def.LocalPositionOffset;
 
         GameObject instance = RunnerObjectPool.Instance.Get(def.Prefab, transform, spawnPosition, spawnRotation);
         Vector3 desiredWorld = Vector3.Scale(def.Prefab.transform.lossyScale, def.ScaleMultiplier);
-        Vector3 parentWorld  = transform.lossyScale;
+        Vector3 parentWorld = transform.lossyScale;
         instance.transform.localScale = new Vector3(
             parentWorld.x > 0.001f ? desiredWorld.x / parentWorld.x : desiredWorld.x,
             parentWorld.y > 0.001f ? desiredWorld.y / parentWorld.y : desiredWorld.y,
             parentWorld.z > 0.001f ? desiredWorld.z / parentWorld.z : desiredWorld.z);
         spawnedInstances.Add((instance, def.Prefab));
+
+        // Ensure coin has a trigger collider so OnTriggerEnter fires on the player
+        if (instance.GetComponentInChildren<Collider>() == null)
+        {
+            SphereCollider sc = instance.AddComponent<SphereCollider>();
+            sc.isTrigger = true;
+            sc.radius = 0.5f;
+            sc.center = new Vector3(0f, 0.5f, 0f);
+        }
+        else
+        {
+            foreach (Collider c in instance.GetComponentsInChildren<Collider>())
+                c.isTrigger = true;
+        }
+
         RunnerCoin coin = instance.GetComponentInChildren<RunnerCoin>();
         if (coin != null) coin.SetValue(def.CoinValue);
     }
@@ -274,7 +289,7 @@ public class ChunkSpawnController : MonoBehaviour
         SpawnItemDefinition coinDef = spawnTable.PickItemByType(score, RunnerLane.All, RunnerItemType.Coin);
         if (coinDef == null || coinDef.Prefab == null) return;
 
-        int patternCount = Random.value < 0.35f ? 2 : 1;
+        int patternCount = 2;
         float halfChunk = chunkLength * 0.5f;
 
         for (int p = 0; p < patternCount; p++)
@@ -306,7 +321,7 @@ public class ChunkSpawnController : MonoBehaviour
     {
         if (definition.Prefab == null)
         {
-            Debug.LogWarning($"[ChunkSpawnController] Prefab is null for definition '{definition.ItemId}'. Skipping spawn.");
+            Debug.LogWarning($" Prefab is null for definition '{definition.ItemId}'. Skipping spawn.");
             return;
         }
 
@@ -326,33 +341,33 @@ public class ChunkSpawnController : MonoBehaviour
 
         if (definition.ItemType == RunnerItemType.Obstacle)
         {
-            
+
             if (instance.GetComponentInChildren<RunnerHazard>() == null)
                 instance.AddComponent<RunnerObstacle>();
 
-            
-            
-            
+
+
+
             if (instance.GetComponentInChildren<Collider>() == null)
             {
                 BoxCollider bc = instance.AddComponent<BoxCollider>();
                 bc.isTrigger = true;
-                
+
                 MeshFilter mf = instance.GetComponentInChildren<MeshFilter>();
                 if (mf != null && mf.sharedMesh != null)
                 {
                     bc.center = mf.sharedMesh.bounds.center;
-                    bc.size   = mf.sharedMesh.bounds.size;
+                    bc.size = mf.sharedMesh.bounds.size;
                 }
                 else
                 {
                     bc.center = new Vector3(0f, 0.75f, 0f);
-                    bc.size   = new Vector3(0.8f, 1.5f, 0.8f);
+                    bc.size = new Vector3(0.8f, 1.5f, 0.8f);
                 }
             }
             else
             {
-                
+
                 bool hasTrigger = false;
                 foreach (Collider c in instance.GetComponentsInChildren<Collider>())
                     if (c.isTrigger) { hasTrigger = true; break; }
@@ -360,15 +375,15 @@ public class ChunkSpawnController : MonoBehaviour
                     instance.GetComponentInChildren<Collider>().isTrigger = true;
             }
 
-            
-            
-            
-            
+
+
+
+
             if (instance.GetComponent<Rigidbody>() == null)
             {
                 Rigidbody rb = instance.AddComponent<Rigidbody>();
                 rb.isKinematic = true;
-                rb.useGravity  = false;
+                rb.useGravity = false;
             }
         }
 

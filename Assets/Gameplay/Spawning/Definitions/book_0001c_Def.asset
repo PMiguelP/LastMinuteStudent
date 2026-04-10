@@ -22,7 +22,7 @@ MonoBehaviour:
   coinValue: 1
   localPositionOffset: {x: 0, y: 0.5, z: 0}
   rotationOffsetEuler: {x: 0, y: 0, z: 0}
-  scaleMultiplier: {x: 5, y: 5, z: 5}
+  scaleMultiplier: {x: 3.5, y: 3.5, z: 3.5}
   useSocketRotation: 1
   configureSimpleGemsAnim: 1
   gemsRotate: 1

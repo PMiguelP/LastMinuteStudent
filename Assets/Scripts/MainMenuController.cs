@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -30,13 +31,22 @@ public class MainMenuController : MonoBehaviour
     private bool gameIsOver;
 
     private float _highScore;
+    private int   _lifetimeCoins;
     private Image _proximityBarFill;
     private Text _proximityLabel;
     private Text _highScoreText;
+    private Text _lifetimeCoinText;
+    private CanvasGroup _loadingOverlay;
 
     private int _lastDisplayedScore = -1;
     private PlayerRunnerController[] _runners;
     private ChaserFollower[]         _chasers;
+
+    private void Awake()
+    {
+        _highScore    = PlayerPrefs.GetFloat("HighScore", 0f);
+        _lifetimeCoins = PlayerPrefs.GetInt("LifetimeCoins", 0);
+    }
 
     private void Start()
     {
@@ -93,6 +103,8 @@ public class MainMenuController : MonoBehaviour
 
     public void SetProximityBarFill(Image img) => _proximityBarFill = img;
     public void SetProximityLabel(Text label) => _proximityLabel = label;
+    public void SetLifetimeCoinText(Text text) => _lifetimeCoinText = text;
+    public void SetLoadingScreen(CanvasGroup overlay) => _loadingOverlay = overlay;
 
     public void ClearUIRefs()
     {
@@ -113,6 +125,7 @@ public class MainMenuController : MonoBehaviour
     public bool IsGameRunning() => gameIsRunning;
     public float GetScore() => currentScore;
     public int GetCoins() => currentCoins;
+    public int GetLifetimeCoins() => _lifetimeCoins;
 
     // ─── Score / Coins ────────────────────────────────────────────────────────
 
@@ -159,6 +172,7 @@ public class MainMenuController : MonoBehaviour
 
     public void StartGame()
     {
+        GameAudioManager.Instance?.Play(SoundEvent.StartGame);
         if (mainMenuPanel != null) mainMenuPanel.SetActive(false);
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
         if (scorePanel != null)   scorePanel.SetActive(true);
@@ -233,7 +247,12 @@ public class MainMenuController : MonoBehaviour
         if (currentScore > _highScore)
         {
             _highScore = currentScore;
+            PlayerPrefs.SetFloat("HighScore", _highScore);
         }
+
+        _lifetimeCoins += currentCoins;
+        PlayerPrefs.SetInt("LifetimeCoins", _lifetimeCoins);
+        PlayerPrefs.Save();
 
         if (mainMenuPanel != null) mainMenuPanel.SetActive(false);
         if (gameOverPanel != null) gameOverPanel.SetActive(true);
@@ -251,7 +270,39 @@ public class MainMenuController : MonoBehaviour
         }
     }
 
-    public void RestartGame() => StartGame();
+    public void RestartGame() => StartCoroutine(RestartWithFade());
+
+    private IEnumerator RestartWithFade()
+    {
+        if (_loadingOverlay != null)
+        {
+            _loadingOverlay.gameObject.SetActive(true);
+            float t = 0f;
+            while (t < 1f)
+            {
+                t += Time.unscaledDeltaTime / 0.35f;
+                _loadingOverlay.alpha = Mathf.Clamp01(t);
+                yield return null;
+            }
+            _loadingOverlay.alpha = 1f;
+        }
+
+        ShowMenu();
+        yield return null;
+
+        if (_loadingOverlay != null)
+        {
+            float t = 1f;
+            while (t > 0f)
+            {
+                t -= Time.unscaledDeltaTime / 0.4f;
+                _loadingOverlay.alpha = Mathf.Clamp01(t);
+                yield return null;
+            }
+            _loadingOverlay.alpha = 0f;
+            _loadingOverlay.gameObject.SetActive(false);
+        }
+    }
 
     public void QuitGame()
     {
@@ -318,6 +369,7 @@ public class MainMenuController : MonoBehaviour
     {
         if (coinText != null) coinText.text = $"\u25cf {currentCoins}";
         if (gameOverCoinText != null) gameOverCoinText.text = currentCoins.ToString();
+        if (_lifetimeCoinText != null) _lifetimeCoinText.text = _lifetimeCoins.ToString();
     }
 
     private void UpdateHighScoreUI()

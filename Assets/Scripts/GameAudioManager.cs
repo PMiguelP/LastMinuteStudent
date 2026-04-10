@@ -8,6 +8,10 @@ public enum SoundEvent
     SpeedBoost,
     GameOver,
     CatchSequence,
+    UIClick,
+    StartGame,
+    Jump,
+    Footstep,
 }
 
 public class GameAudioManager : MonoBehaviour
@@ -21,8 +25,12 @@ public class GameAudioManager : MonoBehaviour
     [SerializeField] private AudioClip speedBoostClip;
     [SerializeField] private AudioClip gameOverClip;
     [SerializeField] private AudioClip catchSequenceClip;
+    [SerializeField] private AudioClip uiClickClip;
+    [SerializeField] private AudioClip startGameClip;
+    [SerializeField] private AudioClip jumpClip;
+    [SerializeField] private AudioClip footstepClip;
 
-    [Header("Volume")]
+    [Header("Volume (fallback if SettingsManager absent)")]
     [SerializeField] [Range(0f, 1f)] private float sfxVolume = 1f;
 
     private AudioSource _source;
@@ -50,12 +58,17 @@ public class GameAudioManager : MonoBehaviour
             SoundEvent.SpeedBoost    => speedBoostClip,
             SoundEvent.GameOver      => gameOverClip,
             SoundEvent.CatchSequence => catchSequenceClip,
+            SoundEvent.UIClick       => uiClickClip,
+            SoundEvent.StartGame     => startGameClip,
+            SoundEvent.Jump          => jumpClip,
+            SoundEvent.Footstep      => footstepClip,
             _                        => null,
         };
 
         if (clip != null)
         {
-            _source.PlayOneShot(clip, sfxVolume);
+            float vol = SettingsManager.Instance != null ? SettingsManager.Instance.SFXVolume : sfxVolume;
+            _source.PlayOneShot(clip, vol);
         }
     }
 }

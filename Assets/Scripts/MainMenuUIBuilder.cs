@@ -10,60 +10,67 @@ public class MainMenuUIBuilder : MonoBehaviour
     [SerializeField] private MainMenuController menuController;
 
     [Header("Text")]
-    [SerializeField] private string gameTitleLine1 = "LAST MINUTE";
-    [SerializeField] private string gameTitleLine2 = "STUDENT";
-    [SerializeField] private string gameTagline = "Don\u2019t get caught before class.";
-    [SerializeField] private string startButtonText = "\u25ba  PLAY";
+    [SerializeField] private string gameTitleLine1    = "LAST MINUTE";
+    [SerializeField] private string gameTitleLine2    = "STUDENT";
+    [SerializeField] private string gameTagline       = "Don\u2019t get caught before class.";
+    [SerializeField] private string startButtonText   = "\u25ba  PLAY";
     [SerializeField] private string restartButtonText = "\u25ba  PLAY AGAIN";
-    [SerializeField] private string quitButtonText = "QUIT";
-    [SerializeField] private string gameOverTitle = "CAUGHT!";
-    [SerializeField] private string gameOverSubtitle = "Your professor got you.";
-    [SerializeField] private string chaserWarningText = "\u26a0  PROF IS CLOSE!";
+    [SerializeField] private string quitButtonText    = "QUIT";
+    [SerializeField] private string gameOverTitle     = "CAUGHT!";
+    [SerializeField] private string gameOverSubtitle  = "Your professor got you.";
+    [SerializeField] private string chaserWarningText = "\u26a0  JULIO IS CLOSE!";
 
     [Header("Colors")]
     [SerializeField] private Color accentColor   = new Color(0.95f, 0.62f, 0.07f, 1f);
     [SerializeField] private Color dangerColor   = new Color(0.92f, 0.22f, 0.22f, 1f);
     [SerializeField] private Color safeColor     = new Color(0.13f, 0.77f, 0.37f, 1f);
-    [SerializeField] private Color coinColor     = new Color(1f, 0.89f, 0.16f, 1f);
+    [SerializeField] private Color coinColor     = new Color(1f,    0.89f, 0.16f, 1f);
     [SerializeField] private Color secondaryText = new Color(0.60f, 0.65f, 0.72f, 1f);
 
-    
+    // Shared palette
+    static readonly Color RBg     = new Color(0.02f, 0.02f, 0.06f, 0.97f);
+    static readonly Color RBorder = new Color(0.95f, 0.82f, 0.04f, 1f);
+    static readonly Color RText   = new Color(1f,    0.94f, 0.20f, 1f);
+    static readonly Color RDim    = new Color(0.50f, 0.44f, 0.12f, 1f);
+    static readonly Color RRed    = new Color(1f,    0.12f, 0.04f, 1f);
+    const float B = 3f;
+
+    // Settings panel reference (toggled at runtime)
+    private GameObject _settingsPanel;
+
+    // ── Awake ─────────────────────────────────────────────────────────────────
 
     private void Awake()
     {
-        if (menuController == null)
-            menuController = GetComponent<MainMenuController>();
-        if (menuController == null)
-            menuController = FindFirstObjectByType<MainMenuController>();
+        if (menuController == null) menuController = GetComponent<MainMenuController>();
+        if (menuController == null) menuController = FindFirstObjectByType<MainMenuController>();
         if (menuController == null) return;
 
-        
         Transform existing = transform.Find("UICanvas");
         if (existing != null) Destroy(existing.gameObject);
 
-        
         menuController.ClearUIRefs();
-
         EnsureEventSystemExists();
         BuildMenu();
     }
 
-    
+    // ── Build ─────────────────────────────────────────────────────────────────
 
     private void BuildMenu()
     {
         Canvas canvas = CreateCanvas();
 
-        
         GameObject mainMenu = BuildMainMenu(canvas.transform);
-
         GameObject gameOver = BuildGameOver(canvas.transform,
-            out Text goScore, out Text goCoins, out Text goHighScore);
+            out Text goScore, out Text goCoins, out Text goHighScore, out Text goLifetimeCoins);
 
-        
         GameObject hud = BuildHUD(canvas.transform,
-            out Text scoreText, out Text coinText,
-            out Image barFill,  out Text barLabel);
+            out Text scoreText, out Text coinText, out Text barLabel);
+
+        _settingsPanel = BuildSettingsPanel(canvas.transform);
+
+        // Loading overlay — topmost, starts hidden
+        CanvasGroup loadingOverlay = BuildLoadingOverlay(canvas.transform);
 
         menuController.SetMainMenuPanel(mainMenu);
         menuController.SetGameOverPanel(gameOver);
@@ -73,11 +80,13 @@ public class MainMenuUIBuilder : MonoBehaviour
         menuController.SetGameOverScoreText(goScore);
         menuController.SetGameOverCoinText(goCoins);
         menuController.SetHighScoreText(goHighScore);
-        menuController.SetProximityBarFill(barFill);
+        menuController.SetLifetimeCoinText(goLifetimeCoins);
+        menuController.SetProximityBarFill(null);
         menuController.SetProximityLabel(barLabel);
+        menuController.SetLoadingScreen(loadingOverlay);
     }
 
-    
+    // ── Canvas ────────────────────────────────────────────────────────────────
 
     private Canvas CreateCanvas()
     {
@@ -99,11 +108,10 @@ public class MainMenuUIBuilder : MonoBehaviour
         return c;
     }
 
-    
+    // ── HUD ───────────────────────────────────────────────────────────────────
 
     private GameObject BuildHUD(Transform parent,
-        out Text scoreText, out Text coinText,
-        out Image barFill,  out Text barLabel)
+        out Text scoreText, out Text coinText, out Text barLabel)
     {
         GameObject hud = MakeRect("HUD", parent);
         Stretch(hud);
@@ -113,144 +121,440 @@ public class MainMenuUIBuilder : MonoBehaviour
         hudCanvas.sortingOrder    = 200;
         hud.AddComponent<GraphicRaycaster>();
 
-        
-        Color rBg     = new Color(0.02f, 0.02f, 0.05f, 0.94f);   
-        Color rBorder = new Color(0.95f, 0.82f, 0.04f, 1f);       
-        Color rText   = new Color(1f,    0.94f, 0.20f, 1f);       
-        Color rDim    = new Color(0.30f, 0.24f, 0.02f, 1f);       
-        Color rGreen  = new Color(0.08f, 1f,    0.30f, 1f);       
-        Color rRed    = new Color(1f,    0.12f, 0.04f, 1f);       
-        const float B = 3f;                                         
-
-        
-        
-        
-        
-        
+        // ── Score box ────────────────────────────────────────────────────
         GameObject scoreBorder = MakeRect("ScoreBorder", hud.transform);
-        scoreBorder.AddComponent<Image>().color = rBorder;
+        scoreBorder.AddComponent<Image>().color = RBorder;
         Anchor(scoreBorder.GetComponent<RectTransform>(),
             new Vector2(0f, 1f), new Vector2(0f, 1f),
-            new Vector2(10f, -134f), new Vector2(260f, -6f));
+            new Vector2(12f, -120f), new Vector2(248f, -8f));
 
         GameObject scoreInner = MakeRect("ScoreInner", scoreBorder.transform);
-        scoreInner.AddComponent<Image>().color = rBg;
-        Stretch(scoreInner);
+        scoreInner.AddComponent<Image>().color = RBg;
         Anchor(scoreInner.GetComponent<RectTransform>(),
-            Vector2.zero, Vector2.one,
-            new Vector2(B, B), new Vector2(-B, -B));
+            Vector2.zero, Vector2.one, new Vector2(B, B), new Vector2(-B, -B));
 
-        Text scoreLbl = MakeText("Label", scoreInner.transform,
-            "SCORE", 16, FontStyle.Bold, rBorder);
+        Text scoreLbl = MakeText("Label", scoreInner.transform, "SCORE", 14, FontStyle.Bold, RBorder);
         scoreLbl.alignment = TextAnchor.UpperLeft;
         Anchor(scoreLbl.rectTransform,
             new Vector2(0f, 1f), new Vector2(1f, 1f),
-            new Vector2(10f, -24f), new Vector2(-10f, 0f));
+            new Vector2(10f, -22f), new Vector2(-10f, 0f));
 
-        scoreText = MakeText("Value", scoreInner.transform,
-            "000000", 58, FontStyle.Bold, rText);
+        scoreText = MakeText("Value", scoreInner.transform, "000000", 52, FontStyle.Bold, RText);
         scoreText.alignment = TextAnchor.LowerLeft;
         Anchor(scoreText.rectTransform,
             Vector2.zero, new Vector2(1f, 1f),
-            new Vector2(8f, 4f), new Vector2(-8f, -26f));
-        RetroOutline(scoreText.gameObject, Color.black, 3f);
+            new Vector2(8f, 4f), new Vector2(-8f, -24f));
+        RetroOutline(scoreText.gameObject, Color.black, 2f);
 
-        
-        
-        
-        
-        
+        // ── Coin box ─────────────────────────────────────────────────────
         GameObject coinBorder = MakeRect("CoinBorder", hud.transform);
-        coinBorder.AddComponent<Image>().color = rBorder;
+        coinBorder.AddComponent<Image>().color = RBorder;
         Anchor(coinBorder.GetComponent<RectTransform>(),
             new Vector2(1f, 1f), new Vector2(1f, 1f),
-            new Vector2(-210f, -96f), new Vector2(-10f, -6f));
+            new Vector2(-200f, -88f), new Vector2(-12f, -8f));
 
         GameObject coinInner = MakeRect("CoinInner", coinBorder.transform);
-        coinInner.AddComponent<Image>().color = rBg;
+        coinInner.AddComponent<Image>().color = RBg;
         Anchor(coinInner.GetComponent<RectTransform>(),
-            Vector2.zero, Vector2.one,
-            new Vector2(B, B), new Vector2(-B, -B));
+            Vector2.zero, Vector2.one, new Vector2(B, B), new Vector2(-B, -B));
 
-        Text coinLbl = MakeText("Label", coinInner.transform,
-            "BOOKS", 13, FontStyle.Bold, rBorder);
+        Text coinLbl = MakeText("Label", coinInner.transform, "BOOKS", 12, FontStyle.Bold, RBorder);
         coinLbl.alignment = TextAnchor.UpperLeft;
         Anchor(coinLbl.rectTransform,
             new Vector2(0f, 1f), new Vector2(1f, 1f),
-            new Vector2(8f, -20f), new Vector2(-8f, 0f));
+            new Vector2(8f, -18f), new Vector2(-8f, 0f));
 
-        coinText = MakeText("Value", coinInner.transform,
-            "\u25c6 0", 40, FontStyle.Bold, rText);
+        coinText = MakeText("Value", coinInner.transform, "\u25c6 0", 36, FontStyle.Bold, RText);
         coinText.alignment = TextAnchor.LowerLeft;
         Anchor(coinText.rectTransform,
             Vector2.zero, new Vector2(1f, 1f),
-            new Vector2(8f, 4f), new Vector2(-8f, -22f));
+            new Vector2(8f, 4f), new Vector2(-8f, -20f));
         RetroOutline(coinText.gameObject, Color.black, 2f);
 
-        
-        
-        
-        
-        GameObject threatPanel = MakeRect("ThreatPanel", hud.transform);
-        threatPanel.AddComponent<Image>().color = rBg;
-        Anchor(threatPanel.GetComponent<RectTransform>(),
-            Vector2.zero, new Vector2(1f, 0f),
-            new Vector2(0f, 0f), new Vector2(0f, 34f));
-
-        
-        GameObject topLine = MakeRect("TopLine", threatPanel.transform);
-        topLine.AddComponent<Image>().color = rBorder;
-        Anchor(topLine.GetComponent<RectTransform>(),
-            new Vector2(0f, 1f), new Vector2(1f, 1f),
-            new Vector2(0f, -2f), new Vector2(0f, 0f));
-
-        
-        Text profLbl = MakeText("ProfLabel", threatPanel.transform,
-            "PROF", 13, FontStyle.Bold, rBorder);
-        profLbl.alignment = TextAnchor.MiddleCenter;
-        Anchor(profLbl.rectTransform,
-            new Vector2(0f, 0f), new Vector2(0f, 1f),
-            new Vector2(4f, 0f), new Vector2(68f, 0f));
-
-        
-        Text safeLbl = MakeText("SafeLabel", threatPanel.transform,
-            "SAFE", 13, FontStyle.Bold, rGreen);
-        safeLbl.alignment = TextAnchor.MiddleCenter;
-        Anchor(safeLbl.rectTransform,
-            new Vector2(1f, 0f), new Vector2(1f, 1f),
-            new Vector2(-68f, 0f), new Vector2(-4f, 0f));
-
-        
-        GameObject fillBg = MakeRect("FillBg", threatPanel.transform);
-        fillBg.AddComponent<Image>().color = rDim;
-        Anchor(fillBg.GetComponent<RectTransform>(),
-            new Vector2(0f, 0f), new Vector2(1f, 1f),
-            new Vector2(72f, 4f), new Vector2(-72f, -4f));
-
-        
-        GameObject fillObj = MakeRect("Fill", fillBg.transform);
-        barFill            = fillObj.AddComponent<Image>();
-        barFill.color      = rGreen;
-        barFill.type       = Image.Type.Filled;
-        barFill.fillMethod = Image.FillMethod.Horizontal;
-        barFill.fillOrigin = 0;
-        barFill.fillAmount = 1f;
-        Stretch(fillObj);
-
-        
-        barLabel = MakeText("BarLabel", hud.transform,
-            chaserWarningText, 18, FontStyle.Bold, rRed);
+        // ── "JULIO IS CLOSE!" floating label (no bar, no panel) ──────────
+        barLabel = MakeText("JulioLabel", hud.transform,
+            chaserWarningText, 20, FontStyle.Bold, RRed);
         barLabel.alignment = TextAnchor.MiddleCenter;
         Anchor(barLabel.rectTransform,
-            Vector2.zero, new Vector2(1f, 0f),
-            new Vector2(0f, 34f), new Vector2(0f, 62f));
+            new Vector2(0.2f, 0f), new Vector2(0.8f, 0f),
+            new Vector2(0f, 10f), new Vector2(0f, 42f));
         RetroOutline(barLabel.gameObject, Color.black, 2f);
         barLabel.enabled = false;
 
         return hud;
     }
 
-    
+    // ── Main Menu ─────────────────────────────────────────────────────────────
+
+    private GameObject BuildMainMenu(Transform parent)
+    {
+        GameObject overlay = MakeRect("MainMenuPanel", parent);
+        overlay.AddComponent<Image>().color = new Color(0.01f, 0.01f, 0.03f, 0.97f);
+        Stretch(overlay);
+        overlay.AddComponent<CanvasGroupFadeIn>();
+
+        GameObject card = MakeRect("Card", overlay.transform);
+        card.AddComponent<Image>().color = RBorder;
+        RectTransform cr = card.GetComponent<RectTransform>();
+        cr.anchorMin = cr.anchorMax = cr.pivot = new Vector2(1f, 0.5f);
+        cr.sizeDelta = new Vector2(440f, 0f);
+        cr.anchoredPosition = new Vector2(-48f, 0f);
+        VLG(card, 44 + B, 44 + B, 40 + B, 40 + B, 12f, TextAnchor.UpperLeft);
+        AutoHeight(card);
+
+        GameObject cardBg = MakeRect("CardBg", card.transform);
+        cardBg.AddComponent<Image>().color = new Color(0.03f, 0.03f, 0.07f, 1f);
+        cardBg.AddComponent<LayoutElement>().ignoreLayout = true;
+        Anchor(cardBg.GetComponent<RectTransform>(),
+            Vector2.zero, Vector2.one, new Vector2(B, B), new Vector2(-B, -B));
+
+        Bar(card.transform, RBorder, 4f);
+        Spacer(card.transform, 10f);
+
+        Text t1 = Row(card.transform, gameTitleLine1, 46, FontStyle.Bold, RText, 58f);
+        RetroOutline(t1.gameObject, Color.black, 3f);
+        Text t2 = Row(card.transform, gameTitleLine2, 62, FontStyle.Bold, Color.white, 76f);
+        RetroOutline(t2.gameObject, Color.black, 3f);
+        Spacer(card.transform, 4f);
+
+        Row(card.transform, gameTagline, 16, FontStyle.Normal, RDim, 24f);
+        Spacer(card.transform, 16f);
+
+        Bar(card.transform, new Color(RBorder.r, RBorder.g, RBorder.b, 0.30f), 1f);
+        Spacer(card.transform, 16f);
+
+        RetroBtn(card.transform, startButtonText,   RBorder, Color.black, menuController.StartGame, 72f);
+        Spacer(card.transform, 8f);
+        RetroBtn(card.transform, "\u2699  SETTINGS", new Color(0.12f, 0.12f, 0.16f, 1f), RDim, OpenSettings, 44f);
+        Spacer(card.transform, 6f);
+        RetroBtn(card.transform, quitButtonText,    new Color(0.10f, 0.10f, 0.12f, 1f), RDim, menuController.QuitGame, 44f);
+        Spacer(card.transform, 8f);
+
+        return overlay;
+    }
+
+    private void OpenSettings()
+    {
+        if (_settingsPanel != null)
+            _settingsPanel.SetActive(!_settingsPanel.activeSelf);
+    }
+
+    // ── Settings Panel ────────────────────────────────────────────────────────
+
+    private GameObject BuildSettingsPanel(Transform parent)
+    {
+        // Full-screen dark overlay
+        GameObject overlay = MakeRect("SettingsPanel", parent);
+        overlay.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.75f);
+        Stretch(overlay);
+
+        // Card
+        GameObject card = MakeRect("Card", overlay.transform);
+        card.AddComponent<Image>().color = RBorder;
+        RectTransform cr = card.GetComponent<RectTransform>();
+        cr.anchorMin = cr.anchorMax = cr.pivot = new Vector2(0.5f, 0.5f);
+        cr.sizeDelta = new Vector2(420f, 0f);
+        cr.anchoredPosition = Vector2.zero;
+        VLG(card, 40 + B, 40 + B, 36 + B, 36 + B, 14f, TextAnchor.UpperLeft);
+        AutoHeight(card);
+
+        GameObject cardBg = MakeRect("CardBg", card.transform);
+        cardBg.AddComponent<Image>().color = new Color(0.03f, 0.03f, 0.07f, 1f);
+        cardBg.AddComponent<LayoutElement>().ignoreLayout = true;
+        Anchor(cardBg.GetComponent<RectTransform>(),
+            Vector2.zero, Vector2.one, new Vector2(B, B), new Vector2(-B, -B));
+
+        Bar(card.transform, RBorder, 3f);
+        Spacer(card.transform, 8f);
+
+        Text title = Row(card.transform, "\u2699  SETTINGS", 28, FontStyle.Bold, RText, 40f);
+        RetroOutline(title.gameObject, Color.black, 2f);
+        Spacer(card.transform, 8f);
+        Bar(card.transform, new Color(RBorder.r, RBorder.g, RBorder.b, 0.25f), 1f);
+        Spacer(card.transform, 10f);
+
+        // Music Volume
+        BuildSliderRow(card.transform, "Music Volume",
+            SettingsManager.Instance?.MusicVolume ?? 0.6f,
+            v => SettingsManager.Instance?.SetMusicVolume(v));
+
+        Spacer(card.transform, 6f);
+
+        // SFX Volume
+        BuildSliderRow(card.transform, "SFX Volume",
+            SettingsManager.Instance?.SFXVolume ?? 1f,
+            v => SettingsManager.Instance?.SetSFXVolume(v));
+
+        Spacer(card.transform, 6f);
+
+        // Particles toggle
+        BuildParticlesToggle(card.transform);
+
+        Spacer(card.transform, 14f);
+        Bar(card.transform, new Color(RBorder.r, RBorder.g, RBorder.b, 0.25f), 1f);
+        Spacer(card.transform, 10f);
+
+        RetroBtn(card.transform, "BACK", new Color(0.10f, 0.10f, 0.12f, 1f), RDim,
+            () => overlay.SetActive(false), 44f);
+        Spacer(card.transform, 6f);
+
+        overlay.SetActive(false);
+        return overlay;
+    }
+
+    private void BuildSliderRow(Transform parent, string label, float initialValue,
+        System.Action<float> onChange)
+    {
+        // Label above, slider below — avoids HLG width-calculation issues
+        GameObject container = MakeRect(label + "Row", parent);
+        VerticalLayoutGroup vlg = container.AddComponent<VerticalLayoutGroup>();
+        vlg.spacing              = 4f;
+        vlg.childControlWidth    = true;
+        vlg.childControlHeight   = true;
+        vlg.childForceExpandWidth  = true;
+        vlg.childForceExpandHeight = false;
+        container.AddComponent<LayoutElement>().preferredHeight = 52f;
+
+        Text lbl = MakeText("Label", container.transform, label, 15, FontStyle.Bold, RBorder);
+        lbl.alignment = TextAnchor.MiddleLeft;
+        lbl.raycastTarget = false;
+        lbl.gameObject.AddComponent<LayoutElement>().preferredHeight = 20f;
+
+        // Slider container
+        GameObject sliderObj = MakeRect("Slider", container.transform);
+        sliderObj.AddComponent<LayoutElement>().preferredHeight = 24f;
+
+        const float handleW = 20f;
+
+        // Background
+        GameObject bg = MakeRect("Background", sliderObj.transform);
+        bg.AddComponent<Image>().color = new Color(0.15f, 0.15f, 0.20f, 1f);
+        RectTransform bgRt = bg.GetComponent<RectTransform>();
+        bgRt.anchorMin = new Vector2(0f, 0.25f);
+        bgRt.anchorMax = new Vector2(1f, 0.75f);
+        bgRt.offsetMin = bgRt.offsetMax = Vector2.zero;
+
+        // Fill Area → Fill
+        GameObject fillArea = MakeRect("Fill Area", sliderObj.transform);
+        RectTransform fillAreaRt = fillArea.GetComponent<RectTransform>();
+        fillAreaRt.anchorMin = new Vector2(0f, 0.25f);
+        fillAreaRt.anchorMax = new Vector2(1f, 0.75f);
+        fillAreaRt.offsetMin = new Vector2(handleW * 0.5f, 0f);
+        fillAreaRt.offsetMax = new Vector2(-handleW * 0.5f, 0f);
+
+        GameObject fill = MakeRect("Fill", fillArea.transform);
+        RectTransform fillRt = fill.GetComponent<RectTransform>();
+        fill.AddComponent<Image>().color = RBorder;
+        fillRt.anchorMin = Vector2.zero;
+        fillRt.anchorMax = new Vector2(1f, 1f);
+        fillRt.offsetMin = fillRt.offsetMax = Vector2.zero;
+
+        // Handle Slide Area → Handle
+        GameObject handleArea = MakeRect("Handle Slide Area", sliderObj.transform);
+        RectTransform handleAreaRt = handleArea.GetComponent<RectTransform>();
+        handleAreaRt.anchorMin = Vector2.zero;
+        handleAreaRt.anchorMax = Vector2.one;
+        handleAreaRt.offsetMin = new Vector2(handleW * 0.5f, 0f);
+        handleAreaRt.offsetMax = new Vector2(-handleW * 0.5f, 0f);
+
+        GameObject handle = MakeRect("Handle", handleArea.transform);
+        RectTransform handleRt = handle.GetComponent<RectTransform>();
+        Image handleImg = handle.AddComponent<Image>();
+        handleImg.color = Color.white;
+        handleRt.sizeDelta = new Vector2(handleW, handleW);
+        handleRt.anchorMin = handleRt.anchorMax = new Vector2(0.5f, 0.5f);
+
+        // Slider component — add AFTER children exist
+        Slider slider = sliderObj.AddComponent<Slider>();
+        slider.fillRect      = fillRt;
+        slider.handleRect    = handleRt;
+        slider.targetGraphic = handleImg;
+        slider.minValue      = 0f;
+        slider.maxValue      = 1f;
+        slider.value         = initialValue;
+        slider.wholeNumbers  = false;
+        slider.direction     = Slider.Direction.LeftToRight;
+
+        slider.onValueChanged.AddListener(v => onChange?.Invoke(v));
+    }
+
+    private void BuildParticlesToggle(Transform parent)
+    {
+        GameObject container = MakeRect("ParticlesRow", parent);
+        HorizontalLayoutGroup h = container.AddComponent<HorizontalLayoutGroup>();
+        h.spacing              = 12f;
+        h.childAlignment       = TextAnchor.MiddleLeft;
+        h.childControlWidth    = true;
+        h.childControlHeight   = true;
+        h.childForceExpandWidth  = false;
+        h.childForceExpandHeight = false;
+        container.AddComponent<LayoutElement>().preferredHeight = 36f;
+
+        Text lbl = MakeText("Label", container.transform, "Particles", 15, FontStyle.Bold, RBorder);
+        lbl.alignment = TextAnchor.MiddleLeft;
+        lbl.raycastTarget = false;
+        LayoutElement lblEl = lbl.gameObject.AddComponent<LayoutElement>();
+        lblEl.minWidth       = 140f;
+        lblEl.preferredWidth = 140f;
+        lblEl.flexibleWidth  = 0f;
+
+        // Track state locally — SettingsManager may not be ready during Awake
+        bool current = SettingsManager.Instance?.ParticlesEnabled ?? true;
+        Color onCol  = new Color(0.10f, 0.75f, 0.30f, 1f);
+        Color offCol = new Color(0.45f, 0.10f, 0.10f, 1f);
+
+        GameObject btnObj = MakeRect("Toggle", container.transform);
+        Image btnImg = btnObj.AddComponent<Image>();
+        btnImg.color = current ? onCol : offCol;
+        LayoutElement btnEl = btnObj.AddComponent<LayoutElement>();
+        btnEl.minWidth       = 80f;
+        btnEl.preferredWidth = 80f;
+        btnEl.flexibleWidth  = 0f;
+
+        Text btnTxt = MakeText("Txt", btnObj.transform, current ? "ON" : "OFF",
+            16, FontStyle.Bold, Color.white);
+        btnTxt.alignment = TextAnchor.MiddleCenter;
+        Stretch(btnTxt.rectTransform);
+
+        Button btn = btnObj.AddComponent<Button>();
+        btn.targetGraphic = btnImg;
+        ColorBlock cb = btn.colors;
+        cb.normalColor      = Color.white;
+        cb.highlightedColor = new Color(1.2f, 1.2f, 1.2f, 1f);
+        cb.pressedColor     = new Color(0.8f, 0.8f, 0.8f, 1f);
+        btn.colors = cb;
+
+        btn.onClick.AddListener(() =>
+        {
+            current = !current;
+            SettingsManager.Instance?.SetParticlesEnabled(current);
+            btnImg.color = current ? onCol : offCol;
+            btnTxt.text  = current ? "ON" : "OFF";
+        });
+    }
+
+    // ── Game Over ─────────────────────────────────────────────────────────────
+
+    private GameObject BuildGameOver(Transform parent,
+        out Text goScore, out Text goCoins, out Text goHighScore, out Text goLifetimeCoins)
+    {
+        GameObject overlay = MakeRect("GameOverPanel", parent);
+        overlay.AddComponent<Image>().color = new Color(0.01f, 0.01f, 0.03f, 0.97f);
+        Stretch(overlay);
+        overlay.AddComponent<CanvasGroupFadeIn>();
+
+        GameObject card = MakeRect("Card", overlay.transform);
+        card.AddComponent<Image>().color = RRed;
+        RectTransform cr = card.GetComponent<RectTransform>();
+        cr.anchorMin = cr.anchorMax = cr.pivot = new Vector2(0f, 0.5f);
+        cr.sizeDelta = new Vector2(520f, 0f);
+        cr.anchoredPosition = new Vector2(48f, 0f);
+        VLG(card, 44 + B, 44 + B, 36 + B, 36 + B, 10f, TextAnchor.UpperLeft);
+        AutoHeight(card);
+
+        GameObject cardBg = MakeRect("CardBg", card.transform);
+        cardBg.AddComponent<Image>().color = new Color(0.03f, 0.03f, 0.07f, 1f);
+        cardBg.AddComponent<LayoutElement>().ignoreLayout = true;
+        Anchor(cardBg.GetComponent<RectTransform>(),
+            Vector2.zero, Vector2.one, new Vector2(B, B), new Vector2(-B, -B));
+
+        Bar(card.transform, RRed, 4f);
+        Spacer(card.transform, 4f);
+
+        Text titleText = Row(card.transform, gameOverTitle, 64, FontStyle.Bold, RRed, 80f);
+        RetroOutline(titleText.gameObject, Color.black, 4f);
+        Row(card.transform, gameOverSubtitle, 18, FontStyle.Normal, RDim, 26f);
+        Spacer(card.transform, 10f);
+
+        // Stats block
+        GameObject statsBlock = MakeRect("Stats", card.transform);
+        statsBlock.AddComponent<LayoutElement>().preferredHeight = 100f;
+
+        Color rBorderC = RBorder;
+        Text scoreLabel = MakeText("ScoreLabel", statsBlock.transform, "SCORE", 13, FontStyle.Bold, rBorderC);
+        scoreLabel.alignment = TextAnchor.UpperLeft;
+        Anchor(scoreLabel.rectTransform,
+            new Vector2(0f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -18f), new Vector2(0f, 0f));
+
+        goScore = MakeText("ScoreValue", statsBlock.transform, "0", 48, FontStyle.Bold, Color.white);
+        goScore.alignment = TextAnchor.UpperLeft;
+        Anchor(goScore.rectTransform,
+            new Vector2(0f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -90f), new Vector2(0f, -18f));
+        RetroOutline(goScore.gameObject, Color.black, 3f);
+
+        Text booksLabel = MakeText("BooksLabel", statsBlock.transform, "BOOKS", 13, FontStyle.Bold, rBorderC);
+        booksLabel.alignment = TextAnchor.UpperLeft;
+        Anchor(booksLabel.rectTransform,
+            new Vector2(0.5f, 1f), new Vector2(1f, 1f), new Vector2(0f, -18f), new Vector2(0f, 0f));
+
+        goCoins = MakeText("BooksValue", statsBlock.transform, "0", 40, FontStyle.Bold, coinColor);
+        goCoins.alignment = TextAnchor.UpperLeft;
+        Anchor(goCoins.rectTransform,
+            new Vector2(0.5f, 1f), new Vector2(1f, 1f), new Vector2(0f, -76f), new Vector2(0f, -18f));
+        RetroOutline(goCoins.gameObject, Color.black, 2f);
+
+        // Total lifetime books row
+        GameObject totalRow = MakeRect("TotalRow", card.transform);
+        HorizontalLayoutGroup totalH = totalRow.AddComponent<HorizontalLayoutGroup>();
+        totalH.spacing = 6f;
+        totalH.childAlignment = TextAnchor.MiddleLeft;
+        totalH.childControlHeight = true;
+        totalRow.AddComponent<LayoutElement>().preferredHeight = 22f;
+
+        MakeText("TotalLabel", totalRow.transform,
+            "TOTAL BOOKS:", 14, FontStyle.Bold, RBorder).raycastTarget = false;
+        goLifetimeCoins = MakeText("TotalValue", totalRow.transform,
+            "0", 14, FontStyle.Bold, coinColor);
+        goLifetimeCoins.raycastTarget = false;
+
+        goHighScore = Row(card.transform, "Best  0", 17, FontStyle.Bold,
+            new Color(0.55f, 0.60f, 0.66f), 24f);
+        Spacer(card.transform, 4f);
+        Row(card.transform, "Press Enter or Space to restart", 14, FontStyle.Normal,
+            new Color(0.32f, 0.29f, 0.09f, 0.85f), 20f);
+        Spacer(card.transform, 10f);
+
+        GameObject btnRow = MakeRect("Buttons", card.transform);
+        HorizontalLayoutGroup h = btnRow.AddComponent<HorizontalLayoutGroup>();
+        h.spacing = 10f;
+        h.childAlignment = TextAnchor.MiddleCenter;
+        h.childControlWidth = true;
+        h.childControlHeight = true;
+        h.childForceExpandWidth = true;
+        h.childForceExpandHeight = false;
+        btnRow.AddComponent<LayoutElement>().preferredHeight = 60f;
+
+        RetroBtn(btnRow.transform, restartButtonText, RBorder, Color.black, menuController.RestartGame, 60f);
+        RetroBtn(btnRow.transform, quitButtonText, new Color(0.10f, 0.10f, 0.12f, 1f), RDim, menuController.QuitGame, 60f);
+
+        Spacer(card.transform, 6f);
+
+        overlay.SetActive(false);
+        return overlay;
+    }
+
+    // ── Loading overlay ───────────────────────────────────────────────────────
+
+    private CanvasGroup BuildLoadingOverlay(Transform parent)
+    {
+        GameObject obj = MakeRect("LoadingOverlay", parent);
+        obj.AddComponent<Image>().color = Color.black;
+        Stretch(obj);
+
+        Canvas c = obj.AddComponent<Canvas>();
+        c.overrideSorting = true;
+        c.sortingOrder    = 999;
+
+        CanvasGroup cg = obj.AddComponent<CanvasGroup>();
+        cg.alpha          = 0f;
+        cg.blocksRaycasts = false;
+        cg.interactable   = false;
+        obj.SetActive(false);
+        return cg;
+    }
+
+    // ── Layout helpers ────────────────────────────────────────────────────────
+
     private static void RetroOutline(GameObject obj, Color color, float size)
     {
         Outline o = obj.AddComponent<Outline>();
@@ -259,198 +563,12 @@ public class MainMenuUIBuilder : MonoBehaviour
         o.useGraphicAlpha = false;
     }
 
-    
-
-    private GameObject BuildMainMenu(Transform parent)
-    {
-        const int  B      = 3;
-        Color rBg     = new Color(0.01f, 0.01f, 0.02f, 0.98f);
-        Color rBorder = new Color(0.95f, 0.82f, 0.04f, 1f);
-        Color rText   = new Color(1f,    0.94f, 0.20f, 1f);
-        Color rDim    = new Color(0.55f, 0.48f, 0.14f, 1f);
-
-        
-        GameObject overlay = MakeRect("MainMenuPanel", parent);
-        overlay.AddComponent<Image>().color = rBg;
-        Stretch(overlay);
-        overlay.AddComponent<CanvasGroupFadeIn>();
-
-        
-        GameObject card = MakeRect("Card", overlay.transform);
-        card.AddComponent<Image>().color = rBorder;
-        RectTransform cr = card.GetComponent<RectTransform>();
-        cr.anchorMin = cr.anchorMax = cr.pivot = new Vector2(1f, 0.5f);
-        cr.sizeDelta = new Vector2(480f, 0f);
-        cr.anchoredPosition = new Vector2(-40f, 0f);
-        VLG(card, 48 + B, 48 + B, 44 + B, 44 + B, 14f, TextAnchor.UpperLeft);
-        AutoHeight(card);
-
-        
-        GameObject cardBg = MakeRect("CardBg", card.transform);
-        cardBg.AddComponent<Image>().color = new Color(0.02f, 0.02f, 0.05f, 1f);
-        cardBg.AddComponent<LayoutElement>().ignoreLayout = true;
-        Anchor(cardBg.GetComponent<RectTransform>(),
-            Vector2.zero, Vector2.one,
-            new Vector2(B, B), new Vector2(-B, -B));
-
-        
-        Bar(card.transform, rBorder, 4f);
-        Spacer(card.transform, 8f);
-
-        
-        Text t1 = Row(card.transform, gameTitleLine1, 52, FontStyle.Bold, rText, 64f);
-        RetroOutline(t1.gameObject, Color.black, 3f);
-        Text t2 = Row(card.transform, gameTitleLine2, 68, FontStyle.Bold, Color.white, 84f);
-        RetroOutline(t2.gameObject, Color.black, 3f);
-        Spacer(card.transform, 6f);
-
-        
-        Row(card.transform, gameTagline, 18, FontStyle.Normal, rDim, 28f);
-        Spacer(card.transform, 14f);
-
-        
-        Bar(card.transform, new Color(rBorder.r, rBorder.g, rBorder.b, 0.35f), 1f);
-        Spacer(card.transform, 18f);
-
-        
-        RetroBtn(card.transform, startButtonText,
-            rBorder, Color.black, menuController.StartGame, 80f);
-        Spacer(card.transform, 8f);
-        RetroBtn(card.transform, quitButtonText,
-            new Color(0.10f, 0.10f, 0.12f, 1f), rDim, menuController.QuitGame, 48f);
-        Spacer(card.transform, 8f);
-
-        return overlay;
-    }
-
-    
-
-    private GameObject BuildGameOver(Transform parent,
-        out Text goScore, out Text goCoins, out Text goHighScore)
-    {
-        const int  B      = 3;
-        Color rBg     = new Color(0.01f, 0.01f, 0.02f, 0.98f);
-        Color rBorder = new Color(0.95f, 0.82f, 0.04f, 1f);
-        Color rRed    = new Color(1f,    0.12f, 0.04f, 1f);
-        Color rDim    = new Color(0.55f, 0.48f, 0.14f, 1f);
-
-        
-        GameObject overlay = MakeRect("GameOverPanel", parent);
-        overlay.AddComponent<Image>().color = rBg;
-        Stretch(overlay);
-        overlay.AddComponent<CanvasGroupFadeIn>();
-
-        
-        GameObject card = MakeRect("Card", overlay.transform);
-        card.AddComponent<Image>().color = rRed;
-        RectTransform cr = card.GetComponent<RectTransform>();
-        cr.anchorMin = cr.anchorMax = cr.pivot = new Vector2(0f, 0.5f);
-        cr.sizeDelta = new Vector2(560f, 0f);
-        cr.anchoredPosition = new Vector2(40f, 0f);
-        VLG(card, 48 + B, 48 + B, 40 + B, 40 + B, 12f, TextAnchor.UpperLeft);
-        AutoHeight(card);
-
-        
-        GameObject cardBg = MakeRect("CardBg", card.transform);
-        cardBg.AddComponent<Image>().color = new Color(0.02f, 0.02f, 0.05f, 1f);
-        cardBg.AddComponent<LayoutElement>().ignoreLayout = true;
-        Anchor(cardBg.GetComponent<RectTransform>(),
-            Vector2.zero, Vector2.one,
-            new Vector2(B, B), new Vector2(-B, -B));
-
-        
-        Bar(card.transform, rRed, 5f);
-        Spacer(card.transform, 6f);
-
-        
-        Text titleText = Row(card.transform, gameOverTitle, 72, FontStyle.Bold, rRed, 88f);
-        RetroOutline(titleText.gameObject, Color.black, 4f);
-        Row(card.transform, gameOverSubtitle, 20, FontStyle.Normal, rDim, 28f);
-        Spacer(card.transform, 12f);
-
-        
-        GameObject statsBlock = MakeRect("Stats", card.transform);
-        statsBlock.AddComponent<LayoutElement>().preferredHeight = 106f;
-
-        Text scoreLabel = MakeText("ScoreLabel", statsBlock.transform,
-            "SCORE", 13, FontStyle.Bold, rBorder);
-        scoreLabel.alignment = TextAnchor.UpperLeft;
-        Anchor(scoreLabel.rectTransform,
-            new Vector2(0f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -20f), new Vector2(0f, 0f));
-
-        goScore = MakeText("ScoreValue", statsBlock.transform,
-            "0", 54, FontStyle.Bold, Color.white);
-        goScore.alignment = TextAnchor.UpperLeft;
-        Anchor(goScore.rectTransform,
-            new Vector2(0f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -96f), new Vector2(0f, -20f));
-        RetroOutline(goScore.gameObject, Color.black, 3f);
-
-        Text booksLabel = MakeText("BooksLabel", statsBlock.transform,
-            "BOOKS", 13, FontStyle.Bold, rBorder);
-        booksLabel.alignment = TextAnchor.UpperLeft;
-        Anchor(booksLabel.rectTransform,
-            new Vector2(0.5f, 1f), new Vector2(1f, 1f),
-            new Vector2(0f, -20f), new Vector2(0f, 0f));
-
-        goCoins = MakeText("BooksValue", statsBlock.transform,
-            "0", 44, FontStyle.Bold, coinColor);
-        goCoins.alignment = TextAnchor.UpperLeft;
-        Anchor(goCoins.rectTransform,
-            new Vector2(0.5f, 1f), new Vector2(1f, 1f),
-            new Vector2(0f, -82f), new Vector2(0f, -20f));
-        RetroOutline(goCoins.gameObject, Color.black, 2f);
-
-        
-        goHighScore = Row(card.transform, "Best  0", 18, FontStyle.Bold,
-            new Color(0.55f, 0.60f, 0.66f), 26f);
-        Spacer(card.transform, 6f);
-        Row(card.transform, "Press Enter or Space to restart", 15, FontStyle.Normal,
-            new Color(0.35f, 0.32f, 0.10f, 0.85f), 22f);
-        Spacer(card.transform, 12f);
-
-        
-        GameObject btnRow = MakeRect("Buttons", card.transform);
-        HorizontalLayoutGroup h = btnRow.AddComponent<HorizontalLayoutGroup>();
-        h.spacing              = 12f;
-        h.childAlignment       = TextAnchor.MiddleCenter;
-        h.childControlWidth    = true;
-        h.childControlHeight   = true;
-        h.childForceExpandWidth  = true;
-        h.childForceExpandHeight = false;
-        btnRow.AddComponent<LayoutElement>().preferredHeight = 68f;
-
-        RetroBtn(btnRow.transform, restartButtonText,
-            new Color(0.95f, 0.82f, 0.04f, 1f), Color.black,
-            menuController.RestartGame, 68f);
-        RetroBtn(btnRow.transform, quitButtonText,
-            new Color(0.10f, 0.10f, 0.12f, 1f), rDim,
-            menuController.QuitGame, 68f);
-
-        Spacer(card.transform, 8f);
-
-        overlay.SetActive(false);
-        return overlay;
-    }
-
-    private void BackgroundPill(Transform parent,
-        Vector2 anchorMin, Vector2 anchorMax,
-        Vector2 offsetMin, Vector2 offsetMax)
-    {
-        GameObject obj = MakeRect("BgPill", parent);
-        obj.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.82f);
-        Anchor(obj.GetComponent<RectTransform>(), anchorMin, anchorMax, offsetMin, offsetMax);
-    }
-
-    
-
     private void VLG(GameObject obj,
-        int padLeft, int padRight, int padTop, int padBot,
+        float padLeft, float padRight, float padTop, float padBot,
         float spacing, TextAnchor align)
     {
         VerticalLayoutGroup v = obj.AddComponent<VerticalLayoutGroup>();
-        v.padding              = new RectOffset(padLeft, padRight, padTop, padBot);
+        v.padding              = new RectOffset((int)padLeft, (int)padRight, (int)padTop, (int)padBot);
         v.spacing              = spacing;
         v.childAlignment       = align;
         v.childControlWidth    = true;
@@ -486,13 +604,6 @@ public class MainMenuUIBuilder : MonoBehaviour
         return t;
     }
 
-    private void Btn(Transform parent, string label, Color bg,
-                     UnityEngine.Events.UnityAction onClick, float h)
-    {
-        RetroBtn(parent, label, bg, Color.white, onClick, h);
-    }
-
-    
     private void RetroBtn(Transform parent, string label, Color bg, Color textColor,
                           UnityEngine.Events.UnityAction onClick, float h)
     {
@@ -503,21 +614,21 @@ public class MainMenuUIBuilder : MonoBehaviour
         ColorBlock cb = btn.colors;
         cb.normalColor      = bg;
         cb.highlightedColor = bg * 1.20f;
-        cb.pressedColor     = bg * 0.75f;
+        cb.pressedColor     = bg * 0.72f;
         cb.selectedColor    = bg;
         cb.colorMultiplier  = 1f;
+        cb.fadeDuration     = 0.08f;
         btn.colors = cb;
+        btn.onClick.AddListener(() => GameAudioManager.Instance?.Play(SoundEvent.UIClick));
         btn.onClick.AddListener(onClick);
 
         obj.AddComponent<LayoutElement>().preferredHeight = h;
 
-        Text t = MakeText("Label", obj.transform, label, 27, FontStyle.Bold, textColor);
+        Text t = MakeText("Label", obj.transform, label, 24, FontStyle.Bold, textColor);
         t.alignment = TextAnchor.MiddleCenter;
         Stretch(t.rectTransform);
         RetroOutline(t.gameObject, Color.black, 2f);
     }
-
-    
 
     private GameObject MakeRect(string name, Transform parent)
     {
@@ -531,11 +642,11 @@ public class MainMenuUIBuilder : MonoBehaviour
     {
         GameObject obj = MakeRect(name, parent);
         Text t = obj.AddComponent<Text>();
-        t.text             = content;
-        t.fontSize         = size;
-        t.fontStyle        = style;
-        t.color            = color;
-        t.raycastTarget    = false;
+        t.text               = content;
+        t.fontSize           = size;
+        t.fontStyle          = style;
+        t.color              = color;
+        t.raycastTarget      = false;
         t.horizontalOverflow = HorizontalWrapMode.Wrap;
         t.verticalOverflow   = VerticalWrapMode.Overflow;
         t.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
@@ -560,7 +671,7 @@ public class MainMenuUIBuilder : MonoBehaviour
         rt.offsetMax = offsetMax;
     }
 
-    
+    // ── Event system ──────────────────────────────────────────────────────────
 
     private void EnsureEventSystemExists()
     {

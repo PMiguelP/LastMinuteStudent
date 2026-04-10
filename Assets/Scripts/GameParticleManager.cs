@@ -41,6 +41,7 @@ public class GameParticleManager : MonoBehaviour
         };
 
         if (prefab == null) return;
+        if (SettingsManager.Instance != null && !SettingsManager.Instance.ParticlesEnabled) return;
 
         Destroy(Instantiate(prefab, worldPosition, Quaternion.identity), 3f);
     }

@@ -51,6 +51,8 @@ public class PlayerRunnerController : MonoBehaviour
     private bool _isVulnerable;
     private float _vulnerableTimer;
 
+    private float _footstepTimer;
+
     private ChaserFollower _chaser;
 
     private void Awake()
@@ -89,6 +91,7 @@ public class PlayerRunnerController : MonoBehaviour
         HandleLaneInput();
         TickBoost();
         TickStumble();
+        TickFootsteps();
         UpdateMovement();
         UpdateAnimatorState(!_isStumbling);
 
@@ -123,6 +126,7 @@ public class PlayerRunnerController : MonoBehaviour
             if (IsGrounded())
             {
                 verticalVelocity = effectiveJump;
+                GameAudioManager.Instance?.Play(SoundEvent.Jump);
                 TriggerAnimator(jumpTriggerName);
             }
             else if (_hasDoubleJump && !_usedDoubleJump)
@@ -130,6 +134,7 @@ public class PlayerRunnerController : MonoBehaviour
                 verticalVelocity = effectiveJump;
                 _usedDoubleJump = true;
                 _hasDoubleJump = false;
+                GameAudioManager.Instance?.Play(SoundEvent.Jump);
                 TriggerAnimator(jumpTriggerName);
             }
         }
@@ -209,7 +214,14 @@ public class PlayerRunnerController : MonoBehaviour
     {
         GameAudioManager.Instance?.Play(SoundEvent.GameOver);
         GameParticleManager.Instance?.PlayAt(ParticleEvent.GameOver, transform.position);
-        if (menuController != null)
+
+        // Let the chaser teleport in and play the catch/dance sequence.
+        // CatchSequence will call ShowGameOver() at the end.
+        if (_chaser != null)
+        {
+            _chaser.TriggerCatchSequenceFromGameOver();
+        }
+        else if (menuController != null)
         {
             menuController.ShowGameOver();
         }
@@ -299,6 +311,23 @@ public class PlayerRunnerController : MonoBehaviour
         }
         ResetAnimatorTriggers();
         UpdateAnimatorState(false);
+    }
+
+    private void TickFootsteps()
+    {
+        if (IsGrounded() && !_isStumbling)
+        {
+            _footstepTimer -= Time.deltaTime;
+            if (_footstepTimer <= 0f)
+            {
+                GameAudioManager.Instance?.Play(SoundEvent.Footstep);
+                _footstepTimer = 0.35f;
+            }
+        }
+        else
+        {
+            _footstepTimer = 0f;
+        }
     }
 
     private void TickBoost()
