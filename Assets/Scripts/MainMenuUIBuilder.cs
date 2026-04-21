@@ -10,29 +10,29 @@ public class MainMenuUIBuilder : MonoBehaviour
     [SerializeField] private MainMenuController menuController;
 
     [Header("Text")]
-    [SerializeField] private string gameTitleLine1    = "LAST MINUTE";
-    [SerializeField] private string gameTitleLine2    = "STUDENT";
-    [SerializeField] private string gameTagline       = "Don\u2019t get caught before class.";
-    [SerializeField] private string startButtonText   = "\u25ba  PLAY";
+    [SerializeField] private string gameTitleLine1 = "LAST MINUTE";
+    [SerializeField] private string gameTitleLine2 = "STUDENT";
+    [SerializeField] private string gameTagline = "Don\u2019t get caught before class.";
+    [SerializeField] private string startButtonText = "\u25ba  PLAY";
     [SerializeField] private string restartButtonText = "\u25ba  PLAY AGAIN";
-    [SerializeField] private string quitButtonText    = "QUIT";
-    [SerializeField] private string gameOverTitle     = "CAUGHT!";
-    [SerializeField] private string gameOverSubtitle  = "Your professor got you.";
+    [SerializeField] private string quitButtonText = "QUIT";
+    [SerializeField] private string gameOverTitle = "CAUGHT!";
+    [SerializeField] private string gameOverSubtitle = "Your professor got you.";
     [SerializeField] private string chaserWarningText = "\u26a0  JULIO IS CLOSE!";
 
     [Header("Colors")]
-    [SerializeField] private Color accentColor   = new Color(0.95f, 0.62f, 0.07f, 1f);
-    [SerializeField] private Color dangerColor   = new Color(0.92f, 0.22f, 0.22f, 1f);
-    [SerializeField] private Color safeColor     = new Color(0.13f, 0.77f, 0.37f, 1f);
-    [SerializeField] private Color coinColor     = new Color(1f,    0.89f, 0.16f, 1f);
+    [SerializeField] private Color accentColor = new Color(0.95f, 0.62f, 0.07f, 1f);
+    [SerializeField] private Color dangerColor = new Color(0.92f, 0.22f, 0.22f, 1f);
+    [SerializeField] private Color safeColor = new Color(0.13f, 0.77f, 0.37f, 1f);
+    [SerializeField] private Color coinColor = new Color(1f, 0.89f, 0.16f, 1f);
     [SerializeField] private Color secondaryText = new Color(0.60f, 0.65f, 0.72f, 1f);
 
     // Shared palette
-    static readonly Color RBg     = new Color(0.02f, 0.02f, 0.06f, 0.97f);
+    static readonly Color RBg = new Color(0.02f, 0.02f, 0.06f, 0.97f);
     static readonly Color RBorder = new Color(0.95f, 0.82f, 0.04f, 1f);
-    static readonly Color RText   = new Color(1f,    0.94f, 0.20f, 1f);
-    static readonly Color RDim    = new Color(0.50f, 0.44f, 0.12f, 1f);
-    static readonly Color RRed    = new Color(1f,    0.12f, 0.04f, 1f);
+    static readonly Color RText = new Color(1f, 0.94f, 0.20f, 1f);
+    static readonly Color RDim = new Color(0.50f, 0.44f, 0.12f, 1f);
+    static readonly Color RRed = new Color(1f, 0.12f, 0.04f, 1f);
     const float B = 3f;
 
     // Settings panel reference (toggled at runtime)
@@ -96,14 +96,14 @@ public class MainMenuUIBuilder : MonoBehaviour
         obj.transform.SetParent(transform, false);
 
         Canvas c = obj.GetComponent<Canvas>();
-        c.renderMode   = RenderMode.ScreenSpaceOverlay;
+        c.renderMode = RenderMode.ScreenSpaceOverlay;
         c.sortingOrder = 100;
 
         CanvasScaler s = obj.GetComponent<CanvasScaler>();
-        s.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        s.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         s.referenceResolution = new Vector2(1920f, 1080f);
-        s.screenMatchMode     = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-        s.matchWidthOrHeight  = 0.5f;
+        s.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+        s.matchWidthOrHeight = 0.5f;
 
         return c;
     }
@@ -118,7 +118,7 @@ public class MainMenuUIBuilder : MonoBehaviour
 
         Canvas hudCanvas = hud.AddComponent<Canvas>();
         hudCanvas.overrideSorting = true;
-        hudCanvas.sortingOrder    = 200;
+        hudCanvas.sortingOrder = 200;
         hud.AddComponent<GraphicRaycaster>();
 
         // ── Score box ────────────────────────────────────────────────────
@@ -223,11 +223,11 @@ public class MainMenuUIBuilder : MonoBehaviour
         Bar(card.transform, new Color(RBorder.r, RBorder.g, RBorder.b, 0.30f), 1f);
         Spacer(card.transform, 16f);
 
-        RetroBtn(card.transform, startButtonText,   RBorder, Color.black, menuController.StartGame, 72f);
+        RetroBtn(card.transform, startButtonText, RBorder, Color.black, menuController.StartGame, 72f);
         Spacer(card.transform, 8f);
         RetroBtn(card.transform, "\u2699  SETTINGS", new Color(0.12f, 0.12f, 0.16f, 1f), RDim, OpenSettings, 44f);
         Spacer(card.transform, 6f);
-        RetroBtn(card.transform, quitButtonText,    new Color(0.10f, 0.10f, 0.12f, 1f), RDim, menuController.QuitGame, 44f);
+        RetroBtn(card.transform, quitButtonText, new Color(0.10f, 0.10f, 0.12f, 1f), RDim, menuController.QuitGame, 44f);
         Spacer(card.transform, 8f);
 
         return overlay;
@@ -247,57 +247,8 @@ public class MainMenuUIBuilder : MonoBehaviour
         GameObject overlay = MakeRect("SettingsPanel", parent);
         overlay.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.75f);
         Stretch(overlay);
-
-        // Card
-        GameObject card = MakeRect("Card", overlay.transform);
-        card.AddComponent<Image>().color = RBorder;
-        RectTransform cr = card.GetComponent<RectTransform>();
-        cr.anchorMin = cr.anchorMax = cr.pivot = new Vector2(0.5f, 0.5f);
-        cr.sizeDelta = new Vector2(420f, 0f);
-        cr.anchoredPosition = Vector2.zero;
-        VLG(card, 40 + B, 40 + B, 36 + B, 36 + B, 14f, TextAnchor.UpperLeft);
-        AutoHeight(card);
-
-        GameObject cardBg = MakeRect("CardBg", card.transform);
-        cardBg.AddComponent<Image>().color = new Color(0.03f, 0.03f, 0.07f, 1f);
-        cardBg.AddComponent<LayoutElement>().ignoreLayout = true;
-        Anchor(cardBg.GetComponent<RectTransform>(),
-            Vector2.zero, Vector2.one, new Vector2(B, B), new Vector2(-B, -B));
-
-        Bar(card.transform, RBorder, 3f);
-        Spacer(card.transform, 8f);
-
-        Text title = Row(card.transform, "\u2699  SETTINGS", 28, FontStyle.Bold, RText, 40f);
-        RetroOutline(title.gameObject, Color.black, 2f);
-        Spacer(card.transform, 8f);
-        Bar(card.transform, new Color(RBorder.r, RBorder.g, RBorder.b, 0.25f), 1f);
-        Spacer(card.transform, 10f);
-
-        // Music Volume
-        BuildSliderRow(card.transform, "Music Volume",
-            SettingsManager.Instance?.MusicVolume ?? 0.6f,
-            v => SettingsManager.Instance?.SetMusicVolume(v));
-
-        Spacer(card.transform, 6f);
-
-        // SFX Volume
-        BuildSliderRow(card.transform, "SFX Volume",
-            SettingsManager.Instance?.SFXVolume ?? 1f,
-            v => SettingsManager.Instance?.SetSFXVolume(v));
-
-        Spacer(card.transform, 6f);
-
-        // Particles toggle
-        BuildParticlesToggle(card.transform);
-
-        Spacer(card.transform, 14f);
-        Bar(card.transform, new Color(RBorder.r, RBorder.g, RBorder.b, 0.25f), 1f);
-        Spacer(card.transform, 10f);
-
-        RetroBtn(card.transform, "BACK", new Color(0.10f, 0.10f, 0.12f, 1f), RDim,
-            () => overlay.SetActive(false), 44f);
-        Spacer(card.transform, 6f);
-
+        SettingsPanelController controller = overlay.AddComponent<SettingsPanelController>();
+        controller.Initialize(menuController, SettingsManager.Instance, () => overlay.SetActive(false));
         overlay.SetActive(false);
         return overlay;
     }
@@ -308,10 +259,10 @@ public class MainMenuUIBuilder : MonoBehaviour
         // Label above, slider below — avoids HLG width-calculation issues
         GameObject container = MakeRect(label + "Row", parent);
         VerticalLayoutGroup vlg = container.AddComponent<VerticalLayoutGroup>();
-        vlg.spacing              = 4f;
-        vlg.childControlWidth    = true;
-        vlg.childControlHeight   = true;
-        vlg.childForceExpandWidth  = true;
+        vlg.spacing = 4f;
+        vlg.childControlWidth = true;
+        vlg.childControlHeight = true;
+        vlg.childForceExpandWidth = true;
         vlg.childForceExpandHeight = false;
         container.AddComponent<LayoutElement>().preferredHeight = 52f;
 
@@ -366,14 +317,14 @@ public class MainMenuUIBuilder : MonoBehaviour
 
         // Slider component — add AFTER children exist
         Slider slider = sliderObj.AddComponent<Slider>();
-        slider.fillRect      = fillRt;
-        slider.handleRect    = handleRt;
+        slider.fillRect = fillRt;
+        slider.handleRect = handleRt;
         slider.targetGraphic = handleImg;
-        slider.minValue      = 0f;
-        slider.maxValue      = 1f;
-        slider.value         = initialValue;
-        slider.wholeNumbers  = false;
-        slider.direction     = Slider.Direction.LeftToRight;
+        slider.minValue = 0f;
+        slider.maxValue = 1f;
+        slider.SetValueWithoutNotify(initialValue);
+        slider.wholeNumbers = false;
+        slider.direction = Slider.Direction.LeftToRight;
 
         slider.onValueChanged.AddListener(v => onChange?.Invoke(v));
     }
@@ -382,11 +333,11 @@ public class MainMenuUIBuilder : MonoBehaviour
     {
         GameObject container = MakeRect("ParticlesRow", parent);
         HorizontalLayoutGroup h = container.AddComponent<HorizontalLayoutGroup>();
-        h.spacing              = 12f;
-        h.childAlignment       = TextAnchor.MiddleLeft;
-        h.childControlWidth    = true;
-        h.childControlHeight   = true;
-        h.childForceExpandWidth  = false;
+        h.spacing = 12f;
+        h.childAlignment = TextAnchor.MiddleLeft;
+        h.childControlWidth = true;
+        h.childControlHeight = true;
+        h.childForceExpandWidth = false;
         h.childForceExpandHeight = false;
         container.AddComponent<LayoutElement>().preferredHeight = 36f;
 
@@ -394,42 +345,43 @@ public class MainMenuUIBuilder : MonoBehaviour
         lbl.alignment = TextAnchor.MiddleLeft;
         lbl.raycastTarget = false;
         LayoutElement lblEl = lbl.gameObject.AddComponent<LayoutElement>();
-        lblEl.minWidth       = 140f;
+        lblEl.minWidth = 140f;
         lblEl.preferredWidth = 140f;
-        lblEl.flexibleWidth  = 0f;
+        lblEl.flexibleWidth = 0f;
 
-        // Track state locally — SettingsManager may not be ready during Awake
-        bool current = SettingsManager.Instance?.ParticlesEnabled ?? true;
-        Color onCol  = new Color(0.10f, 0.75f, 0.30f, 1f);
+        SettingsManager settings = SettingsManager.Instance;
+        bool current = settings != null ? settings.ParticlesEnabled : SettingsManager.DefaultParticlesEnabled;
+        Color onCol = new Color(0.10f, 0.75f, 0.30f, 1f);
         Color offCol = new Color(0.45f, 0.10f, 0.10f, 1f);
 
         GameObject btnObj = MakeRect("Toggle", container.transform);
         Image btnImg = btnObj.AddComponent<Image>();
         btnImg.color = current ? onCol : offCol;
         LayoutElement btnEl = btnObj.AddComponent<LayoutElement>();
-        btnEl.minWidth       = 80f;
+        btnEl.minWidth = 80f;
         btnEl.preferredWidth = 80f;
-        btnEl.flexibleWidth  = 0f;
+        btnEl.flexibleWidth = 0f;
 
         Text btnTxt = MakeText("Txt", btnObj.transform, current ? "ON" : "OFF",
             16, FontStyle.Bold, Color.white);
         btnTxt.alignment = TextAnchor.MiddleCenter;
+        btnTxt.raycastTarget = false;
         Stretch(btnTxt.rectTransform);
 
         Button btn = btnObj.AddComponent<Button>();
         btn.targetGraphic = btnImg;
         ColorBlock cb = btn.colors;
-        cb.normalColor      = Color.white;
+        cb.normalColor = Color.white;
         cb.highlightedColor = new Color(1.2f, 1.2f, 1.2f, 1f);
-        cb.pressedColor     = new Color(0.8f, 0.8f, 0.8f, 1f);
+        cb.pressedColor = new Color(0.8f, 0.8f, 0.8f, 1f);
         btn.colors = cb;
 
         btn.onClick.AddListener(() =>
         {
-            current = !current;
-            SettingsManager.Instance?.SetParticlesEnabled(current);
+            current = settings != null ? !settings.ParticlesEnabled : !current;
+            settings?.SetParticlesEnabled(current);
             btnImg.color = current ? onCol : offCol;
-            btnTxt.text  = current ? "ON" : "OFF";
+            btnTxt.text = current ? "ON" : "OFF";
         });
     }
 
@@ -543,12 +495,12 @@ public class MainMenuUIBuilder : MonoBehaviour
 
         Canvas c = obj.AddComponent<Canvas>();
         c.overrideSorting = true;
-        c.sortingOrder    = 999;
+        c.sortingOrder = 999;
 
         CanvasGroup cg = obj.AddComponent<CanvasGroup>();
-        cg.alpha          = 0f;
+        cg.alpha = 0f;
         cg.blocksRaycasts = false;
-        cg.interactable   = false;
+        cg.interactable = false;
         obj.SetActive(false);
         return cg;
     }
@@ -558,7 +510,7 @@ public class MainMenuUIBuilder : MonoBehaviour
     private static void RetroOutline(GameObject obj, Color color, float size)
     {
         Outline o = obj.AddComponent<Outline>();
-        o.effectColor    = color;
+        o.effectColor = color;
         o.effectDistance = new Vector2(size, -size);
         o.useGraphicAlpha = false;
     }
@@ -568,12 +520,12 @@ public class MainMenuUIBuilder : MonoBehaviour
         float spacing, TextAnchor align)
     {
         VerticalLayoutGroup v = obj.AddComponent<VerticalLayoutGroup>();
-        v.padding              = new RectOffset((int)padLeft, (int)padRight, (int)padTop, (int)padBot);
-        v.spacing              = spacing;
-        v.childAlignment       = align;
-        v.childControlWidth    = true;
-        v.childControlHeight   = true;
-        v.childForceExpandWidth  = true;
+        v.padding = new RectOffset((int)padLeft, (int)padRight, (int)padTop, (int)padBot);
+        v.spacing = spacing;
+        v.childAlignment = align;
+        v.childControlWidth = true;
+        v.childControlHeight = true;
+        v.childForceExpandWidth = true;
         v.childForceExpandHeight = false;
     }
 
@@ -612,12 +564,12 @@ public class MainMenuUIBuilder : MonoBehaviour
 
         Button btn = obj.AddComponent<Button>();
         ColorBlock cb = btn.colors;
-        cb.normalColor      = bg;
+        cb.normalColor = bg;
         cb.highlightedColor = bg * 1.20f;
-        cb.pressedColor     = bg * 0.72f;
-        cb.selectedColor    = bg;
-        cb.colorMultiplier  = 1f;
-        cb.fadeDuration     = 0.08f;
+        cb.pressedColor = bg * 0.72f;
+        cb.selectedColor = bg;
+        cb.colorMultiplier = 1f;
+        cb.fadeDuration = 0.08f;
         btn.colors = cb;
         btn.onClick.AddListener(() => GameAudioManager.Instance?.Play(SoundEvent.UIClick));
         btn.onClick.AddListener(onClick);
@@ -642,13 +594,13 @@ public class MainMenuUIBuilder : MonoBehaviour
     {
         GameObject obj = MakeRect(name, parent);
         Text t = obj.AddComponent<Text>();
-        t.text               = content;
-        t.fontSize           = size;
-        t.fontStyle          = style;
-        t.color              = color;
-        t.raycastTarget      = false;
+        t.text = content;
+        t.fontSize = size;
+        t.fontStyle = style;
+        t.color = color;
+        t.raycastTarget = false;
         t.horizontalOverflow = HorizontalWrapMode.Wrap;
-        t.verticalOverflow   = VerticalWrapMode.Overflow;
+        t.verticalOverflow = VerticalWrapMode.Overflow;
         t.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         return t;
     }
@@ -675,18 +627,12 @@ public class MainMenuUIBuilder : MonoBehaviour
 
     private void EnsureEventSystemExists()
     {
-        EventSystem existing = FindFirstObjectByType<EventSystem>();
-        if (existing != null) { UpgradeEventSystem(existing.gameObject); return; }
+        // Leave any existing EventSystem completely untouched — it was already
+        // working for the scene and modifying its input modules at runtime breaks it.
+        // Only create one from scratch if the scene has none at all.
+        if (FindFirstObjectByType<EventSystem>() != null) return;
 
         new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule))
             .transform.SetParent(transform, false);
-    }
-
-    private void UpgradeEventSystem(GameObject obj)
-    {
-        StandaloneInputModule old = obj.GetComponent<StandaloneInputModule>();
-        if (old != null) Destroy(old);
-        if (obj.GetComponent<InputSystemUIInputModule>() == null)
-            obj.AddComponent<InputSystemUIInputModule>();
     }
 }
