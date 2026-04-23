@@ -2314,6 +2314,7 @@ MonoBehaviour:
   obstacleHitFX: {fileID: 4021103657954561961, guid: 5c755f9bc5253ea418e919994537dcc7, type: 3}
   speedBoostFX: {fileID: 9027514048236820045, guid: effb650189dc5714e9e9801b1cfb3991, type: 3}
   gameOverFX: {fileID: 9157105887711914197, guid: c4f829cb7dd4b864caf8832ec5b1ee55, type: 3}
+  particlesEnabled: 1
 --- !u!114 &605850817
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2336,7 +2337,7 @@ MonoBehaviour:
   startGameClip: {fileID: 8300000, guid: d296adf47dd0a514fbd36b5ff7df9f9c, type: 3}
   jumpClip: {fileID: 8300000, guid: 9c30d3a241e53ab469e5c34eabaf225e, type: 3}
   footstepClip: {fileID: 8300000, guid: c5e2a73ad4706440f93bf05df0b465fe, type: 3}
-  sfxVolume: 1
+  sfxVolume: 0.2
 --- !u!114 &605850818
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2350,6 +2351,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MusicManager
   musicClip: {fileID: 8300000, guid: 33c1e7ba098d3b14e93d7f58ebd22c7e, type: 3}
+  musicVolume: 0.1
 --- !u!1 &631550506
 GameObject:
   m_ObjectHideFlags: 0

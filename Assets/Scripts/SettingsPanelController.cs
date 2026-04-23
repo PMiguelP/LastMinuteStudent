@@ -17,6 +17,8 @@ public sealed class SettingsPanelController : MonoBehaviour
     private Text _musicValueText;
     private Text _sfxValueText;
     private Text _particlesValueText;
+    private Image _particlesToggleBackground;
+    private Image _particlesCheckmarkImage;
 
     private static readonly Color OverlayColor = new Color(0f, 0f, 0f, 0.75f);
     private static readonly Color CardColor = new Color(0.03f, 0.03f, 0.07f, 0.98f);
@@ -223,8 +225,30 @@ public sealed class SettingsPanelController : MonoBehaviour
 
     private void CreateParticlesToggleRow(Transform parent)
     {
-        GameObject row = new GameObject("ParticlesRow", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
+        GameObject row = new GameObject("ParticlesRow", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement), typeof(Button), typeof(Image));
         row.transform.SetParent(parent, false);
+
+        Image rowImage = row.GetComponent<Image>();
+        rowImage.color = new Color(1f, 1f, 1f, 0.04f);
+
+        Button rowButton = row.GetComponent<Button>();
+        rowButton.transition = Selectable.Transition.ColorTint;
+        ColorBlock rowColors = rowButton.colors;
+        rowColors.normalColor = new Color(1f, 1f, 1f, 0.06f);
+        rowColors.highlightedColor = new Color(1f, 1f, 1f, 0.12f);
+        rowColors.pressedColor = new Color(1f, 1f, 1f, 0.18f);
+        rowColors.selectedColor = rowColors.highlightedColor;
+        rowColors.disabledColor = new Color(1f, 1f, 1f, 0.03f);
+        rowButton.colors = rowColors;
+        rowButton.onClick.AddListener(() =>
+        {
+            if (_particlesToggle == null)
+            {
+                return;
+            }
+
+            _particlesToggle.isOn = !_particlesToggle.isOn;
+        });
 
         HorizontalLayoutGroup layout = row.GetComponent<HorizontalLayoutGroup>();
         layout.spacing = 10f;
@@ -235,7 +259,7 @@ public sealed class SettingsPanelController : MonoBehaviour
         layout.childForceExpandHeight = false;
 
         LayoutElement rowElement = row.GetComponent<LayoutElement>();
-        rowElement.preferredHeight = 34f;
+        rowElement.preferredHeight = 42f;
 
         GameObject labelObject = CreateText(row.transform, "Particles", 15, FontStyle.Bold, AccentColor, TextAnchor.MiddleLeft);
         LayoutElement labelElement = labelObject.GetComponent<LayoutElement>();
@@ -254,6 +278,7 @@ public sealed class SettingsPanelController : MonoBehaviour
         Stretch(backgroundRt);
         Image backgroundImage = backgroundObj.GetComponent<Image>();
         backgroundImage.color = AccentDarkColor;
+        _particlesToggleBackground = backgroundImage;
 
         GameObject checkmarkObj = new GameObject("Checkmark", typeof(RectTransform), typeof(Image));
         checkmarkObj.transform.SetParent(backgroundObj.transform, false);
@@ -264,15 +289,19 @@ public sealed class SettingsPanelController : MonoBehaviour
         checkmarkRt.offsetMax = Vector2.zero;
         Image checkmarkImage = checkmarkObj.GetComponent<Image>();
         checkmarkImage.color = AccentColor;
+        _particlesCheckmarkImage = checkmarkImage;
 
         _particlesToggle = toggleObject.GetComponent<Toggle>();
         _particlesToggle.targetGraphic = backgroundImage;
         _particlesToggle.graphic = checkmarkImage;
+        _particlesToggle.toggleTransition = Toggle.ToggleTransition.None;
         _particlesToggle.isOn = IsParticlesEnabled();
         _particlesToggle.onValueChanged.AddListener(OnParticlesToggled);
 
         _particlesValueText = CreateText(row.transform, IsParticlesEnabled() ? "ON" : "OFF", 13, FontStyle.Bold, Color.white, TextAnchor.MiddleLeft).GetComponent<Text>();
         _particlesValueText.raycastTarget = false;
+
+        UpdateParticlesVisual(_particlesToggle.isOn);
     }
 
     private void CreateActionRow(Transform parent)
@@ -360,6 +389,8 @@ public sealed class SettingsPanelController : MonoBehaviour
 
     private void OnParticlesToggled(bool isOn)
     {
+        UpdateParticlesVisual(isOn);
+
         if (_particleManager != null)
         {
             _particleManager.SetEnabled(isOn);
@@ -419,12 +450,9 @@ public sealed class SettingsPanelController : MonoBehaviour
 
         if (_particlesToggle != null)
         {
-            _particlesToggle.SetIsOnWithoutNotify(IsParticlesEnabled());
-        }
-
-        if (_particlesValueText != null)
-        {
-            _particlesValueText.text = IsParticlesEnabled() ? "ON" : "OFF";
+            bool isOn = IsParticlesEnabled();
+            _particlesToggle.SetIsOnWithoutNotify(isOn);
+            UpdateParticlesVisual(isOn);
         }
     }
 
@@ -461,6 +489,27 @@ public sealed class SettingsPanelController : MonoBehaviour
     private string FormatPercent(float value)
     {
         return Mathf.RoundToInt(value * 100f) + "%";
+    }
+
+    private void UpdateParticlesVisual(bool isOn)
+    {
+        if (_particlesValueText != null)
+        {
+            _particlesValueText.text = isOn ? "ON" : "OFF";
+            _particlesValueText.color = isOn ? AccentColor : new Color(0.72f, 0.72f, 0.76f, 1f);
+        }
+
+        if (_particlesToggleBackground != null)
+        {
+            _particlesToggleBackground.color = isOn
+                ? new Color(0.18f, 0.42f, 0.20f, 1f)
+                : new Color(0.32f, 0.12f, 0.12f, 1f);
+        }
+
+        if (_particlesCheckmarkImage != null)
+        {
+            _particlesCheckmarkImage.color = isOn ? AccentColor : new Color(0.45f, 0.45f, 0.45f, 1f);
+        }
     }
 
     private void ClearChildren()
