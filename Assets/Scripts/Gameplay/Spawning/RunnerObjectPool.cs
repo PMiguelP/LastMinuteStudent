@@ -73,6 +73,17 @@ public class RunnerObjectPool : MonoBehaviour
             return;
         }
 
+        // Re-enable any children that were individually disabled during gameplay
+        // (e.g. RunnerCoin.Collect calls SetActive(false) on its own GameObject,
+        // which is a child of the pool instance root). SetActive(true) on the root
+        // later will NOT re-enable individually-disabled children, so we must
+        // restore them here before pooling.
+        Transform[] children = instance.GetComponentsInChildren<Transform>(includeInactive: true);
+        for (int i = 1; i < children.Length; i++)
+        {
+            children[i].gameObject.SetActive(true);
+        }
+
         instance.SetActive(false);
         instance.transform.SetParent(transform, false);
 

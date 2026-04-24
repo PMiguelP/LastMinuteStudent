@@ -35,7 +35,6 @@ public class GameAudioManager : MonoBehaviour
 
     private AudioSource _source;
     private SettingsManager _settings;
-    private float _currentVolume = 1f;
 
     private void Awake()
     {
@@ -57,11 +56,6 @@ public class GameAudioManager : MonoBehaviour
 
     private void OnDisable()
     {
-        if (_settings != null)
-        {
-            _settings.OnSettingsChanged -= RefreshVolume;
-        }
-
         _settings = null;
     }
 
@@ -72,22 +66,7 @@ public class GameAudioManager : MonoBehaviour
 
     private void BindSettings()
     {
-        SettingsManager currentSettings = SettingsManager.Instance;
-        if (_settings == currentSettings) return;
-
-        if (_settings != null)
-            _settings.OnSettingsChanged -= RefreshVolume;
-
-        _settings = currentSettings;
-        if (_settings != null)
-            _settings.OnSettingsChanged += RefreshVolume;
-
-        RefreshVolume();
-    }
-
-    private void RefreshVolume()
-    {
-        _currentVolume = _settings != null ? _settings.SFXVolume : sfxVolume;
+        _settings = SettingsManager.Instance;
     }
 
     public float GetVolume()
@@ -130,7 +109,8 @@ public class GameAudioManager : MonoBehaviour
 
         if (clip != null)
         {
-            _source.PlayOneShot(clip, _currentVolume);
+            float volume = _settings != null ? _settings.SFXVolume : sfxVolume;
+            _source.PlayOneShot(clip, volume);
         }
     }
 }

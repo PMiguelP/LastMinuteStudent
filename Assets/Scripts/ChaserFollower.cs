@@ -172,6 +172,12 @@ public class ChaserFollower : MonoBehaviour
             _prevTargetZ = startPosition.z + _defaultForwardGap;
         }
 
-        chaserAnimator?.SetBool("IsRunning", false);
+        if (chaserAnimator != null)
+        {
+            chaserAnimator.ResetTrigger(catchTriggerName);
+            chaserAnimator.Rebind();
+            chaserAnimator.Update(0f);
+            chaserAnimator.SetBool("IsRunning", false);
+        }
     }
 }

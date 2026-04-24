@@ -190,14 +190,16 @@ public class PlayerRunnerController : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        RunnerPickup pickup = other.GetComponentInParent<RunnerPickup>();
+        RunnerPickup pickup = other.GetComponentInParent<RunnerPickup>()
+                          ?? other.GetComponentInChildren<RunnerPickup>();
         if (pickup != null)
         {
             pickup.Collect(this);
             return;
         }
 
-        RunnerHazard hazard = other.GetComponentInParent<RunnerHazard>();
+        RunnerHazard hazard = other.GetComponentInParent<RunnerHazard>()
+                           ?? other.GetComponentInChildren<RunnerHazard>();
         if (hazard != null)
         {
             hazard.Hit(this);

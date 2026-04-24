@@ -11,7 +11,7 @@ public class ChunkSpawnController : MonoBehaviour
     [SerializeField] private bool guaranteeObstacleSpawn = true;
 
     [Header("Fairness")]
-    [SerializeField] private int maxObstaclesPerRow = 1;
+    [SerializeField] private int maxObstaclesPerRow = 2;
     [SerializeField] private float gracePeriodScore = 0f;
 
     [Header("Coin Patterns")]
@@ -43,39 +43,49 @@ public class ChunkSpawnController : MonoBehaviour
 
     private static readonly CoinPoint[][] CoinPatterns = new CoinPoint[][]
     {
-
+        // Straight line × 5
         new[] { new CoinPoint(0,0), new CoinPoint(2,0), new CoinPoint(4,0),
                 new CoinPoint(6,0), new CoinPoint(8,0) },
 
-
+        // Long straight line × 8
         new[] { new CoinPoint(0,0),  new CoinPoint(2,0),  new CoinPoint(4,0),
                 new CoinPoint(6,0),  new CoinPoint(8,0),  new CoinPoint(10,0),
                 new CoinPoint(12,0), new CoinPoint(14,0) },
 
-
+        // Arc / pyramid
         new[] { new CoinPoint(0,0,1f),   new CoinPoint(2,0,1.7f), new CoinPoint(4,0,2.4f),
                 new CoinPoint(6,0,2.4f), new CoinPoint(8,0,1.7f), new CoinPoint(10,0,1f) },
 
-
+        // Zig-zag across lanes
         new[] { new CoinPoint(0,-1),  new CoinPoint(3,0),  new CoinPoint(6,1),
                 new CoinPoint(9,0),   new CoinPoint(12,-1), new CoinPoint(15,0) },
 
-
+        // Sweep left-to-right
         new[] { new CoinPoint(0,-1), new CoinPoint(3,-1), new CoinPoint(6,0),
                 new CoinPoint(9,0),  new CoinPoint(12,1), new CoinPoint(15,1) },
 
-
+        // Sweep right-to-left
         new[] { new CoinPoint(0,1),  new CoinPoint(3,1),  new CoinPoint(6,0),
                 new CoinPoint(9,0),  new CoinPoint(12,-1), new CoinPoint(15,-1) },
 
-
+        // Double row (left + right simultaneously)
         new[] { new CoinPoint(0,-1), new CoinPoint(2,-1), new CoinPoint(4,-1),
                 new CoinPoint(0,1),  new CoinPoint(2,1),  new CoinPoint(4,1) },
 
-
+        // Diagonal ramp
         new[] { new CoinPoint(0,-1,1f),  new CoinPoint(2,-1,1.4f),
                 new CoinPoint(4,0,1.8f), new CoinPoint(6,0,2.2f),
                 new CoinPoint(8,1,2.2f), new CoinPoint(10,1,1f) },
+
+        // Dense center burst × 9
+        new[] { new CoinPoint(0,0), new CoinPoint(1,0), new CoinPoint(2,0),
+                new CoinPoint(3,0), new CoinPoint(4,0), new CoinPoint(5,0),
+                new CoinPoint(6,0), new CoinPoint(7,0), new CoinPoint(8,0) },
+
+        // Three-lane wall (cross all lanes at once, three rows)
+        new[] { new CoinPoint(0,-1), new CoinPoint(0,0), new CoinPoint(0,1),
+                new CoinPoint(4,-1), new CoinPoint(4,0), new CoinPoint(4,1),
+                new CoinPoint(8,-1), new CoinPoint(8,0), new CoinPoint(8,1) },
     };
 
     private void Awake()
@@ -289,7 +299,7 @@ public class ChunkSpawnController : MonoBehaviour
         SpawnItemDefinition coinDef = spawnTable.PickItemByType(score, RunnerLane.All, RunnerItemType.Coin);
         if (coinDef == null || coinDef.Prefab == null) return;
 
-        int patternCount = 2;
+        int patternCount = 4;
         float halfChunk = chunkLength * 0.5f;
 
         for (int p = 0; p < patternCount; p++)
@@ -300,8 +310,10 @@ public class ChunkSpawnController : MonoBehaviour
             float maxRelZ = 0f;
             foreach (CoinPoint cp in pattern) maxRelZ = Mathf.Max(maxRelZ, cp.relZ);
 
-            float zMin = p == 0 ? 2f : halfChunk;
-            float zMax = p == 0 ? halfChunk - maxRelZ : chunkLength - maxRelZ - 2f;
+            // Alternate first/second half so patterns spread evenly across the chunk
+            bool firstHalf = p % 2 == 0;
+            float zMin = firstHalf ? 2f : halfChunk;
+            float zMax = firstHalf ? halfChunk - maxRelZ : chunkLength - maxRelZ - 2f;
             if (zMin >= zMax) continue;
             float zStart = Random.Range(zMin, zMax);
 
