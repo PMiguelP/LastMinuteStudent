@@ -109,9 +109,9 @@ Correr o maior tempo/distância possível sem ser apanhado pelo professor. A pon
 ### Áudio
 | Clip | Formato | Justificação |
 |------|---------|--------------|
-| Música de fundo (`Assets/Gameplay/Audio/Music/background_Music.wav`) | WAV | Sem compressão para streaming contínuo sem *glitch* |
-| Salto (`Assets/Gameplay/Audio/SFX/jump-sfx.wav`) | WAV | SFX curto; WAV para latência mínima no playback |
-| SFX de UI e jogo (`Assets/Gameplay/Audio/SFX/DM-CGS-*.wav`) | WAV | Pack licenciado livre de royalties; WAV para qualidade |
+| Música de fundo (`background_Music.wav`) | WAV | Sem compressão para streaming contínuo sem *glitch* |
+| Salto (`jump-sfx.wav`) | WAV | SFX curto; WAV para latência mínima no playback |
+| SFX de UI e jogo (`Casual Game Sounds U6/*.wav`) | WAV | Pack licenciado livre de royalties; WAV para qualidade |
 
 ### Efeitos de Partículas
 - **Cartoon FX Remaster** (JMO Assets) — efeitos de impacto e recolha de colecionáveis; estilo cartoon coerente com o visual low-poly do jogo.
@@ -121,5 +121,5 @@ Correr o maior tempo/distância possível sem ser apanhado pelo professor. A pon
 ## Observações e Limitações
 
 - A cena principal chama-se `SampleScene` (nome do template URP original mantido por conveniência).
-- Foi realizada uma limpeza conservadora de conteúdo legado: cenas demo isoladas e ficheiros `.unitypackage` de upgrade/legacy foram removidos para reduzir peso do repositório sem impacto no runtime.
+- Alguns assets de terceiros incluem **cenas de demonstração** que não fazem parte do jogo (pastas `Demo/` e `DemoScene/` dentro dos pacotes importados).
 - A pasta `Assets/_Recovery/` contém uma cena de recuperação temporária que não é incluída no *build*.
